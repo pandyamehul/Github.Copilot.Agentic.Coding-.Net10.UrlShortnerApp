@@ -1,0 +1,116 @@
+@page "/"
+
+<PageTitle>UrlTrimmer</PageTitle>
+
+<section class="hero">
+    <div>
+        <p class="eyebrow">Link shortening</p>
+        <h2>Trim a long URL and keep the important part.</h2>
+        <p class="lede">
+            Create compact links, track clicks, and route everything through the API-backed URL store.
+        </p>
+    </div>
+
+    <EditForm Model="request" OnValidSubmit="CreateShortUrlAsync" class="card form-card">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <label>
+            Original URL
+            <InputText @bind-Value="request.OriginalUrl" placeholder="https://example.com/products/very-long-path" />
+        </label>
+
+        <label>
+            Custom code
+            <InputText @bind-Value="request.CustomCode" placeholder="optional-custom-code" />
+        </label>
+
+        <button type="submit" disabled="@isSubmitting">@submitLabel</button>
+    </EditForm>
+</section>
+
+<section class="results-grid">
+    <article class="card">
+        <h3>Latest link</h3>
+        @if (latestLink is null)
+        {
+            <p class="muted">No shortened link yet.</p>
+        }
+        else
+        {
+            <div class="result-block">
+                <a href="@latestLink.ShortenedUrl" target="_blank">@latestLink.ShortenedUrl</a>
+                <p>@latestLink.OriginalUrl</p>
+                <small>@latestLink.ClickCount click(s)</small>
+            </div>
+        }
+    </article>
+
+    <article class="card">
+        <h3>Saved links</h3>
+        @if (urls.Count == 0)
+        {
+            <p class="muted">Create a link to see it here.</p>
+        }
+        else
+        {
+            <ul class="url-list">
+                @foreach (var url in urls)
+                {
+                    <li>
+                        <strong><a href="@url.ShortenedUrl" target="_blank">@url.Code</a></strong>
+                        <span>@url.OriginalUrl</span>
+                    </li>
+                }
+            </ul>
+        }
+    </article>
+</section>
+
+@code {
+    private readonly CreateShortUrlRequestModel request = new();
+    private readonly List<ShortUrlViewModel> urls = [];
+    private ShortUrlViewModel? latestLink;
+    private bool isSubmitting;
+
+    [Inject]
+    private UrlShortenerApiClient ApiClient { get; set; } = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var items = await ApiClient.GetUrlsAsync();
+        urls.AddRange(items);
+    }
+
+    private string submitLabel => isSubmitting ? "Creating..." : "Shorten URL";
+
+    private async Task CreateShortUrlAsync()
+    {
+        isSubmitting = true;
+
+        try
+        {
+            var created = await ApiClient.CreateAsync(new CreateShortUrlRequest(request.OriginalUrl, request.CustomCode));
+            latestLink = created;
+            urls.Insert(0, created);
+            request.Reset();
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private sealed class CreateShortUrlRequestModel
+    {
+        public string OriginalUrl { get; set; } = string.Empty;
+
+        public string? CustomCode { get; set; }
+
+        public void Reset()
+        {
+            OriginalUrl = string.Empty;
+            CustomCode = null;
+        }
+    }
+}
