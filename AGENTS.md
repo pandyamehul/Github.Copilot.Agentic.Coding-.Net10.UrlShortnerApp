@@ -7,15 +7,18 @@ read the relevant doc(s) before making changes in that area.
 ## Project Snapshot
 
 - **Solution:** `UrlShortner.sln`
-- **`WebApi/`** — ASP.NET Core minimal API (`UrlTrimmer.WebApi`), .NET 10, EF Core + SQLite,
-  runs on `http://localhost:5043`. Owns all data access and business rules.
-- **`WebApp/`** — Blazor Web App (`UrlTrimmer.WebApp`), .NET 10, runs on `http://localhost:5044`.
-  Talks to `WebApi` only through `UrlShortenerApiClient` (typed `HttpClient`). Never accesses the
-  database directly.
+- **Current stack:** ASP.NET Core / Blazor on .NET 10, EF Core, and SQLite.
+- **`WebApi/`** — ASP.NET Core minimal API (`UrlTrimmer.WebApi`) running on `http://localhost:5043`.
+   It owns all data access, persistence, and URL-shortening business rules.
+- **`WebApp/`** — Blazor Web App (`UrlTrimmer.WebApp`) running on `http://localhost:5044`.
+   It is the UI shell only and talks to `WebApi` exclusively through `UrlShortenerApiClient`
+   (typed `HttpClient`). It never accesses the database directly.
+- **Architecture boundary:** keep the UI and API layers separate. Shared data flow should stay in
+   the web app contracts/models and HTTP client, not in direct references to `WebApi` internals.
 
 ## Documentation Map
 
-For detailed guidance on specific topics, refer to modular documentation under `docs/` directory. ALWAYS read the relevant .md files / doc(s) BEFORE generating any code or changes.
+For detailed guidance on specific topics, refer to modular documentation under `docs/` directory. It is incredibly important to ALWAYS read the relevant individual instruction file(s) in `docs/` BEFORE generating ANY code or making ANY code changes.
 
 - [docs/authentication-standards.md](docs/authentication-standards.md) — Clerk-only auth, protected routes, homepage redirect, modal sign-in/sign-up.
 - [docs/ui-component-standards.md](docs/ui-component-standards.md) — NeoUI-only components, no custom components.
