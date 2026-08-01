@@ -1,0 +1,24 @@
+<div class="clerk-gate">
+    <section class="card auth-shell">
+        <div>
+            <p class="eyebrow">UrlTrimmer</p>
+            <h1>Sign in to continue</h1>
+            <p class="lede">Use the Clerk modal flow to authenticate and access the app.</p>
+        </div>
+
+        @if (string.IsNullOrWhiteSpace(PublishableKey))
+        {
+            <p class="error-banner">Set Clerk:PublishableKey in user secrets or environment variables.</p>
+        }
+
+        <div class="auth-actions">
+            <button type="button" onclick="window.urlTrimmerClerk.openSignIn()">Sign in</button>
+            <button type="button" class="auth-secondary" onclick="window.urlTrimmerClerk.openSignUp()">Sign up</button>
+        </div>
+    </section>
+</div>
+
+@code {
+    [Parameter]
+    public string? PublishableKey { get; set; }
+}

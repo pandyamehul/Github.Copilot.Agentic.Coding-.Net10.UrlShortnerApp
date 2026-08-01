@@ -1,3 +1,4 @@
+@inject IConfiguration Configuration
 <!DOCTYPE html>
 <html lang="en">
 
@@ -6,10 +7,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="/" />
     <link rel="stylesheet" href="app.css" />
+    <script src="js/clerk.js" data-clerk-publishable-key="@Configuration["Clerk:PublishableKey"]"></script>
     <HeadOutlet @rendermode="InteractiveServer" />
 </head>
 
 <body>
+    <ClerkGate PublishableKey="@Configuration["Clerk:PublishableKey"]" />
     <Routes @rendermode="InteractiveServer" />
     <script src="_framework/blazor.web.js"></script>
 </body>

@@ -66,105 +66,148 @@ a {
     background: rgba(15, 118, 110, 0.08);
 }
 
+.navbutton {
+    border: 0;
+    font: inherit;
+    cursor: pointer;
+    color: inherit;
+}
+
 .content {
     display: grid;
     gap: 22px;
 }
 
 .hero {
-    display: grid;
-    grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
-    gap: 24px;
-    align-items: start;
-}
 
-.lede {
-    max-width: 60ch;
-    color: var(--muted);
-    font-size: 1.05rem;
-    line-height: 1.7;
-}
-
-.card {
-    background: var(--panel);
-    border: 1px solid var(--panel-border);
-    border-radius: 24px;
-    padding: 24px;
-    box-shadow: var(--shadow);
-    backdrop-filter: blur(16px);
-}
-
-.form-card {
-    display: grid;
-    gap: 16px;
-}
-
-.form-card label {
-    display: grid;
-    gap: 8px;
-    font-weight: 600;
-}
-
-.form-card input {
-    border: 1px solid rgba(15, 23, 42, 0.12);
-    border-radius: 14px;
-    padding: 14px 16px;
-    font: inherit;
-    background: rgba(255, 255, 255, 0.92);
-}
-
-.form-card button {
-    border: 0;
-    border-radius: 14px;
-    padding: 14px 18px;
-    background: linear-gradient(135deg, var(--accent), var(--accent-strong));
-    color: white;
-    font-weight: 700;
-    cursor: pointer;
-}
-
-.form-card button:disabled {
-    opacity: 0.7;
-    cursor: wait;
-}
-
-.results-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 22px;
-}
-
-.muted {
-    color: var(--muted);
-}
-
-.result-block {
-    display: grid;
-    gap: 8px;
-    word-break: break-word;
-}
-
-.url-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: grid;
-    gap: 14px;
-}
-
-.url-list li {
-    display: grid;
-    gap: 6px;
-    padding-bottom: 14px;
-    border-bottom: 1px solid rgba(15, 23, 42, 0.08);
-}
-
-@media (max-width: 900px) {
-
-    .hero,
-    .results-grid,
-    .topbar {
-        grid-template-columns: 1fr;
+    .clerk-gate {
+        min-height: calc(100vh - 112px);
         display: grid;
+        place-items: center;
     }
-}
+
+    .auth-shell {
+        width: min(100%, 560px);
+        display: grid;
+        gap: 20px;
+        text-align: center;
+    }
+
+    .auth-actions {
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .auth-actions button {
+        border: 0;
+        border-radius: 14px;
+        padding: 14px 18px;
+        background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+        color: white;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .auth-secondary {
+        background: rgba(15, 118, 110, 0.08) !important;
+        color: var(--accent-strong) !important;
+    }
+
+    .form-card button:disabled {
+        opacity: 0.7;
+        cursor: wait;
+    }
+
+    .login-page {
+        min-height: calc(100vh - 80px);
+        display: grid;
+        place-items: center;
+        padding: 24px 20px 56px;
+    }
+
+    .login-card {
+        width: min(100%, 480px);
+        display: grid;
+        gap: 18px;
+    }
+
+    .login-form {
+        display: grid;
+        gap: 16px;
+    }
+
+    .login-form label {
+        display: grid;
+        gap: 8px;
+        font-weight: 600;
+    }
+
+    .login-form input {
+        border: 1px solid rgba(15, 23, 42, 0.12);
+        border-radius: 14px;
+        padding: 14px 16px;
+        font: inherit;
+        background: rgba(255, 255, 255, 0.92);
+    }
+
+    .login-form button {
+        border: 0;
+        border-radius: 14px;
+        padding: 14px 18px;
+        background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+        color: white;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .error-banner {
+        margin: 0;
+        padding: 12px 14px;
+        border-radius: 14px;
+        background: rgba(220, 38, 38, 0.08);
+        color: #991b1b;
+        border: 1px solid rgba(220, 38, 38, 0.15);
+    }
+
+    .results-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 22px;
+    }
+
+    .muted {
+        color: var(--muted);
+    }
+
+    .result-block {
+        display: grid;
+        gap: 8px;
+        word-break: break-word;
+    }
+
+    .url-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 14px;
+    }
+
+    .url-list li {
+        display: grid;
+        gap: 6px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+    }
+
+    @media (max-width: 900px) {
+
+        .hero,
+        .results-grid,
+        .topbar {
+            grid-template-columns: 1fr;
+            display: grid;
+        }
+    }
