@@ -1,6 +1,7 @@
 window.urlTrimmerClerk = (() => {
     let clerk = null;
     let initializePromise = null;
+    const authStateListeners = new Set();
 
     function loadScript(src, attributes = {}) {
         return new Promise((resolve, reject) => {
@@ -64,6 +65,12 @@ window.urlTrimmerClerk = (() => {
                 ui: { ClerkUI: window.__internal_ClerkUICtor }
             });
 
+            if (typeof clerk.addListener === "function") {
+                clerk.addListener(() => {
+                    void notifyAuthStateListeners();
+                });
+            }
+
             return Boolean(clerk.isSignedIn);
         })();
 
@@ -83,20 +90,71 @@ window.urlTrimmerClerk = (() => {
         return clerk;
     }
 
+    function getDisplayName() {
+        const user = clerk?.user;
+
+        if (!user) {
+            return "";
+        }
+
+        const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ").trim();
+        if (fullName) {
+            return fullName;
+        }
+
+        return user.username ?? user.primaryEmailAddress?.emailAddress ?? "";
+    }
+
+    function getAuthState() {
+        return {
+            isSignedIn: Boolean(clerk?.isSignedIn),
+            displayName: getDisplayName()
+        };
+    }
+
+    async function notifyAuthStateListeners() {
+        const currentClerk = await ensureClerk();
+        const authState = getAuthState();
+
+        await Promise.all(
+            Array.from(authStateListeners).map(listener =>
+                listener.invokeMethodAsync("OnAuthStateChanged", authState).catch(() => {
+                    authStateListeners.delete(listener);
+                })
+            )
+        );
+
+        return currentClerk;
+    }
+
     return {
         initialize,
         isSignedIn: () => Boolean(clerk?.isSignedIn),
+        getAuthState,
+        registerAuthStateListener: listener => {
+            if (listener) {
+                authStateListeners.add(listener);
+            }
+        },
+        unregisterAuthStateListener: listener => {
+            if (listener) {
+                authStateListeners.delete(listener);
+            }
+        },
         openSignIn: async () => {
             const currentClerk = await ensureClerk();
             await currentClerk.openSignIn();
+            await notifyAuthStateListeners();
         },
         openSignUp: async () => {
             const currentClerk = await ensureClerk();
             await currentClerk.openSignUp();
+            await notifyAuthStateListeners();
         },
         signOut: async () => {
             const currentClerk = await ensureClerk();
             await currentClerk.signOut({ redirectUrl: "/" });
+            await notifyAuthStateListeners();
         }
     };
 })();
