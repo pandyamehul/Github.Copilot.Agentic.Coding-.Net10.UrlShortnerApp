@@ -1,6 +1,81 @@
+@inject IJSRuntime JSRuntime
+@implements IAsyncDisposable
+
 <nav class="navmenu">
     <a href="/" class="navlink">Create</a>
     <a href="/dashboard" class="navlink">Dashboard</a>
-    <button type="button" class="navlink navbutton" onclick="window.urlTrimmerClerk.openSignIn()">Sign in</button>
-    <button type="button" class="navlink navbutton" onclick="window.urlTrimmerClerk.openSignUp()">Sign up</button>
+
+    @if (isSignedIn)
+    {
+        <span class="navlink nav-user">@displayName</span>
+        <button type="button" class="navlink navbutton" onclick="window.urlTrimmerClerk.signOut()">Log out</button>
+    }
+    else
+    {
+        <button type="button" class="navlink navbutton" onclick="window.urlTrimmerClerk.openSignIn()">Sign in</button>
+        <button type="button" class="navlink navbutton" onclick="window.urlTrimmerClerk.openSignUp()">Sign up</button>
+    }
 </nav>
+
+@code {
+    private DotNetObjectReference<NavMenu>? dotNetReference;
+    private bool isSignedIn;
+    private string displayName = "User";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        dotNetReference = DotNetObjectReference.Create(this);
+
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("urlTrimmerClerk.registerAuthStateListener", dotNetReference);
+            var authState = await JSRuntime.InvokeAsync<AuthState>("urlTrimmerClerk.getAuthState");
+            ApplyAuthState(authState);
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (JSException)
+        {
+            isSignedIn = false;
+            displayName = "User";
+        }
+    }
+
+    [JSInvokable]
+    public Task OnAuthStateChanged(AuthState authState)
+    {
+        ApplyAuthState(authState);
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private void ApplyAuthState(AuthState authState)
+    {
+        isSignedIn = authState.IsSignedIn;
+        displayName = string.IsNullOrWhiteSpace(authState.DisplayName) ? "User" : authState.DisplayName;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (dotNetReference is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("urlTrimmerClerk.unregisterAuthStateListener", dotNetReference);
+        }
+        catch (JSException)
+        {
+        }
+
+        dotNetReference.Dispose();
+        dotNetReference = null;
+    }
+
+    public sealed record AuthState(bool IsSignedIn, string DisplayName);
+}
