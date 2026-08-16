@@ -12,7 +12,7 @@
 </head>
 
 <body>
-    <ClerkGate PublishableKey="@Configuration["Clerk:PublishableKey"]" />
+    <ClerkGate PublishableKey="@Configuration["Clerk:PublishableKey"]" @rendermode="InteractiveServer" />
     <Routes @rendermode="InteractiveServer" />
     <script src="_framework/blazor.web.js"></script>
 </body>

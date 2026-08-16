@@ -1,24 +1,83 @@
-<div class="clerk-gate">
-    <section class="card auth-shell">
-        <div>
-            <p class="eyebrow">UrlTrimmer</p>
-            <h1>Sign in to continue</h1>
-            <p class="lede">Use the Clerk modal flow to authenticate and access the app.</p>
-        </div>
+@implements IAsyncDisposable
+@inject IJSRuntime JSRuntime
 
-        @if (string.IsNullOrWhiteSpace(PublishableKey))
-        {
-            <p class="error-banner">Set Clerk:PublishableKey in user secrets or environment variables.</p>
-        }
+@if (!isSignedIn)
+{
+    <div class="clerk-gate">
+        <section class="card auth-shell">
+            <div>
+                <p class="eyebrow">UrlTrimmer</p>
+                <h1>Sign in to continue</h1>
+                <p class="lede">Use the Clerk modal flow to authenticate and access the app.</p>
+            </div>
 
-        <div class="auth-actions">
-            <button type="button" onclick="window.urlTrimmerClerk.openSignIn()">Sign in</button>
-            <button type="button" class="auth-secondary" onclick="window.urlTrimmerClerk.openSignUp()">Sign up</button>
-        </div>
-    </section>
-</div>
+            @if (string.IsNullOrWhiteSpace(PublishableKey))
+            {
+                <p class="error-banner">Set Clerk:PublishableKey in user secrets or environment variables.</p>
+            }
+
+            <div class="auth-actions">
+                <button type="button" onclick="window.urlTrimmerClerk.openSignIn()">Sign in</button>
+                <button type="button" class="auth-secondary" onclick="window.urlTrimmerClerk.openSignUp()">Sign up</button>
+            </div>
+        </section>
+    </div>
+}
 
 @code {
     [Parameter]
     public string? PublishableKey { get; set; }
+
+    private DotNetObjectReference<ClerkGate>? dotNetReference;
+    private bool isSignedIn;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        dotNetReference = DotNetObjectReference.Create(this);
+
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("urlTrimmerClerk.registerAuthStateListener", dotNetReference);
+            var authState = await JSRuntime.InvokeAsync<AuthState>("urlTrimmerClerk.getAuthState");
+            isSignedIn = authState.IsSignedIn;
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (JSException)
+        {
+            isSignedIn = false;
+        }
+    }
+
+    [JSInvokable]
+    public Task OnAuthStateChanged(AuthState authState)
+    {
+        isSignedIn = authState.IsSignedIn;
+        return InvokeAsync(StateHasChanged);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (dotNetReference is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("urlTrimmerClerk.unregisterAuthStateListener", dotNetReference);
+        }
+        catch (JSException)
+        {
+        }
+
+        dotNetReference.Dispose();
+        dotNetReference = null;
+    }
+
+    public sealed record AuthState(bool IsSignedIn, string DisplayName);
 }

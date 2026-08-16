@@ -2,11 +2,11 @@
 @implements IAsyncDisposable
 
 <nav class="navmenu">
-    <a href="/" class="navlink">Create</a>
     <a href="/dashboard" class="navlink">Dashboard</a>
 
     @if (isSignedIn)
     {
+        <a href="/" class="navlink">Create</a>
         <span class="navlink nav-user">@displayName</span>
         <button type="button" class="navlink navbutton" onclick="window.urlTrimmerClerk.signOut()">Log out</button>
     }

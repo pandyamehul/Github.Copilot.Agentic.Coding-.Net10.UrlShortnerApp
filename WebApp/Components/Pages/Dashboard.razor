@@ -1,3 +1,77 @@
 @page "/dashboard"
+@inject UrlShortenerApiClient ApiClient
 
-<h1>Dashboard</h1>
+<PageTitle>Dashboard - UrlTrimmer</PageTitle>
+
+<section class="hero">
+    <div>
+        <p class="eyebrow">Overview</p>
+        <h2>Everything UrlTrimmer does for your links</h2>
+        <p class="lede">
+            UrlTrimmer turns long URLs into short, shareable links, tracks how often each one is
+            opened, and keeps every link organized in one place.
+        </p>
+    </div>
+
+    <article class="card">
+        <h3>Total shortened URLs</h3>
+        @if (isLoading)
+        {
+            <p class="muted">Loading overview...</p>
+        }
+        else if (loadFailed)
+        {
+            <p class="error-banner">Unable to load the overview right now.</p>
+        }
+        else
+        {
+            <p class="stat-number">@totalUrls</p>
+            <p class="muted">link(s) created so far</p>
+        }
+    </article>
+</section>
+
+<section class="results-grid">
+    <article class="card">
+        <h3>Shorten instantly</h3>
+        <p class="muted">Paste any long URL and get a compact, shareable link in seconds, with an optional custom code.</p>
+    </article>
+
+    <article class="card">
+        <h3>Track clicks</h3>
+        <p class="muted">Every link records how many times it has been opened, so you always know what's getting traffic.</p>
+    </article>
+
+    <article class="card">
+        <h3>Stay organized</h3>
+        <p class="muted">All your saved links live in one place, ready to revisit, share again, or hand off to teammates.</p>
+    </article>
+
+    <article class="card">
+        <h3>Secure sign-in</h3>
+        <p class="muted">Sign in with Clerk to create and manage your own links safely.</p>
+    </article>
+</section>
+
+@code {
+    private int totalUrls;
+    private bool isLoading = true;
+    private bool loadFailed;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var urls = await ApiClient.GetUrlsAsync();
+            totalUrls = urls.Count;
+        }
+        catch (HttpRequestException)
+        {
+            loadFailed = true;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}
