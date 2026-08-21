@@ -20,8 +20,8 @@ read the relevant doc(s) before making changes in that area.
 
 For detailed guidance on specific topics, refer to modular documentation under `docs/` directory. It is incredibly important to ALWAYS read the relevant individual instruction file(s) in `docs/` BEFORE generating ANY code or making ANY code changes.
 
-- [docs/authentication-standards.md](docs/authentication-standards.md) — Clerk-only auth, protected routes, homepage redirect, modal sign-in/sign-up.
-- [docs/ui-component-standards.md](docs/ui-component-standards.md) — NeoUI-only components, no custom components.
+- [docs/authentication-standards.md](docs/authentication-standards.md) — Clerk-only auth, protected routes, auth-aware homepage, modal sign-in/sign-up.
+- [docs/ui-component-standards.md](docs/ui-component-standards.md) — Custom Blazor markup + hand-written CSS (NeoUI removed), shared CSS classes over ad-hoc styles.
 
 ## Non-Negotiable Rules
 
@@ -41,8 +41,9 @@ For detailed guidance on specific topics, refer to modular documentation under `
 7. **Don't fabricate tech stack details.** `Ref._materials/Tech stack.md` describes aspirational
    direction (Neon/Postgres, DAPR). The current implementation uses SQLite and EF Core — only
    adopt those parts of the aspirational stack when explicitly asked to migrate, and update the
-   relevant doc under `docs/` when you do. **NeoUI (UI components) and Clerk (auth) are already
-   adopted standards** — see [docs/ui-component-standards.md](docs/ui-component-standards.md) and
+   relevant doc under `docs/` when you do. **Clerk (auth) is an adopted standard; NeoUI has been
+   removed in favor of custom Blazor markup + hand-written CSS** — see
+   [docs/ui-component-standards.md](docs/ui-component-standards.md) and
    [docs/authentication-standards.md](docs/authentication-standards.md).
 8. **Ask before you assume.** If a request is ambiguous, or if you see a conflict between the
    instructions and the docs, flag it and ask for clarification instead of guessing.

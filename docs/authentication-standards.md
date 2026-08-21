@@ -10,10 +10,11 @@
 - Enforce auth checks via routing/middleware, not just client-side UI checks.
 - Unauthenticated access attempts must redirect into the Clerk sign-in flow.
 
-## Homepage Redirect
+## Homepage Behavior
 
-- Logged-in users hitting `/` must be redirected to `/dashboard`.
-- Enforce this at the middleware/routing level.
+- `/` (`Home.razor`) is auth-aware in place, not a redirect target: it listens for Clerk auth state via `urlTrimmerClerk.registerAuthStateListener`/`getAuthState` JS interop and `[JSInvokable] OnAuthStateChanged`.
+- Signed-out users see marketing/feature content and sign-in/sign-up CTAs (via `NavMenu`).
+- Signed-in users see the create-short-URL form and their saved links list, rendered inline on `/` — there is no forced redirect to a separate `/dashboard` route.
 
 ## Sign-In / Sign-Up UX
 
@@ -23,8 +24,8 @@
 
 - Apply auth enforcement centrally (e.g. a shared layout/base component or routing middleware), not per-page, so no new page can be added unprotected by accident.
 - Unauthenticated users hitting any protected route must be redirected into the Clerk sign-in modal/flow, then returned to their originally requested route after signing in.
-- Authenticated users hitting `/` must be redirected to `/dashboard` before any homepage content renders.
-- Redirect checks must run server-side/on render, not only after client-side JS hydration, to avoid a flash of protected content.
+- `/` itself is not a protected route — it renders different content in place based on Clerk auth state (see Homepage Behavior above) instead of redirecting.
+- Redirect checks (for actual protected routes) must run server-side/on render, not only after client-side JS hydration, to avoid a flash of protected content.
 
 ## Do and DO NOT
 
@@ -66,5 +67,5 @@
 
 - [ ] Only Clerk used for auth
 - [ ] All pages require authentication
-- [ ] `/` redirects logged-in users to `/dashboard`
+- [ ] `/` renders auth-aware content in place (no forced `/dashboard` redirect)
 - [ ] Sign-in/sign-up always open as modals
