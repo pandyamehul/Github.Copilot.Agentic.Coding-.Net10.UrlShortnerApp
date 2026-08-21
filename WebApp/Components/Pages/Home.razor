@@ -1,85 +1,165 @@
 @page "/"
+@implements IAsyncDisposable
+@inject IJSRuntime JSRuntime
 
 <PageTitle>UrlTrimmer</PageTitle>
 
-<section class="hero">
-    <div>
-        <p class="eyebrow">Link shortening</p>
-        <h2>Trim a long URL and keep the important part.</h2>
-        <p class="lede">
-            Create compact links, track clicks, and route everything through the API-backed URL store.
-        </p>
-    </div>
+@if (!isSignedIn)
+{
+    <section class="hero hero-single">
+        <div>
+            <p class="eyebrow">Link shortening</p>
+            <h2>Trim a long URL and keep the important part.</h2>
+            <p class="lede">
+                UrlTrimmer turns long URLs into short, shareable links, tracks how often each one is
+                opened, and keeps every link organized in one place. Sign in to start creating your own.
+            </p>
+        </div>
+    </section>
 
-    <EditForm Model="request" OnValidSubmit="CreateShortUrlAsync" class="card form-card">
-        <DataAnnotationsValidator />
-        <ValidationSummary />
+    <section class="results-grid">
+        <article class="card">
+            <h3>Shorten instantly</h3>
+            <p class="muted">Paste any long URL and get a compact, shareable link in seconds, with an optional custom code.
+            </p>
+        </article>
 
-        <label>
-            Original URL
-            <InputText @bind-Value="request.OriginalUrl" placeholder="https://example.com/products/very-long-path" />
-        </label>
+        <article class="card">
+            <h3>Track clicks</h3>
+            <p class="muted">Every link records how many times it has been opened, so you always know what's getting
+                traffic.</p>
+            </article>
 
-        <label>
-            Custom code
-            <InputText @bind-Value="request.CustomCode" placeholder="optional-custom-code" />
-        </label>
+            <article class="card">
+                <h3>Stay organized</h3>
+                <p class="muted">All your saved links live in one place, ready to revisit, share again, or hand off to
+                    teammates.</p>
+                </article>
 
-        <button type="submit" disabled="@isSubmitting">@submitLabel</button>
-    </EditForm>
-</section>
-
-<section class="results-grid">
-    <article class="card">
-        <h3>Latest link</h3>
-        @if (latestLink is null)
-        {
-            <p class="muted">No shortened link yet.</p>
+                <article class="card">
+                    <h3>Secure sign-in</h3>
+                    <p class="muted">Sign in with Clerk to create and manage your own links safely.</p>
+                </article>
+            </section>
         }
-        else
+else
         {
-            <div class="result-block">
-                <a href="@latestLink.ShortenedUrl" target="_blank">@latestLink.ShortenedUrl</a>
-                <p>@latestLink.OriginalUrl</p>
-                <small>@latestLink.ClickCount click(s)</small>
-            </div>
-        }
-    </article>
+            <section class="hero">
+                <div>
+                    <p class="eyebrow">Link shortening</p>
+                    <h2>Trim a long URL and keep the important part.</h2>
+                    <p class="lede">
+                        Create compact links, track clicks, and route everything through the API-backed URL store.
+                    </p>
+                </div>
 
-    <article class="card">
-        <h3>Saved links</h3>
-        @if (urls.Count == 0)
-        {
-            <p class="muted">Create a link to see it here.</p>
+                <EditForm Model="request" OnValidSubmit="CreateShortUrlAsync" class="card form-card">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+
+                    <label>
+                        Original URL
+                        <InputText @bind-Value="request.OriginalUrl" placeholder="https://example.com/products/very-long-path" />
+                    </label>
+
+                    <label>
+                        Custom code
+                        <InputText @bind-Value="request.CustomCode" placeholder="optional-custom-code" />
+                    </label>
+
+                    <button type="submit" disabled="@isSubmitting">@submitLabel</button>
+                </EditForm>
+            </section>
+
+            <section class="results-grid">
+                <article class="card">
+                    <h3>Latest link</h3>
+                    @if (latestLink is null)
+                    {
+                        <p class="muted">No shortened link yet.</p>
+                    }
+                    else
+                    {
+                        <div class="result-block">
+                            <a href="@latestLink.ShortenedUrl" target="_blank">@latestLink.ShortenedUrl</a>
+                            <p>@latestLink.OriginalUrl</p>
+                            <small>@latestLink.ClickCount click(s)</small>
+                        </div>
+                    }
+                </article>
+
+                <article class="card">
+                    <h3>Saved links</h3>
+                    @if (urls.Count == 0)
+                    {
+                        <p class="muted">Create a link to see it here.</p>
+                    }
+                    else
+                    {
+                        <ul class="url-list">
+                            @foreach (var url in urls)
+                            {
+                                <li>
+                                    <strong><a href="@url.ShortenedUrl" target="_blank">@url.Code</a></strong>
+                                    <span>@url.OriginalUrl</span>
+                                </li>
+                            }
+                        </ul>
+                    }
+                </article>
+            </section>
         }
-        else
-        {
-            <ul class="url-list">
-                @foreach (var url in urls)
-                {
-                    <li>
-                        <strong><a href="@url.ShortenedUrl" target="_blank">@url.Code</a></strong>
-                        <span>@url.OriginalUrl</span>
-                    </li>
-                }
-            </ul>
-        }
-    </article>
-</section>
 
 @code {
     private readonly CreateShortUrlRequestModel request = new();
     private readonly List<ShortUrlViewModel> urls = [];
     private ShortUrlViewModel? latestLink;
     private bool isSubmitting;
+    private bool isSignedIn;
+    private bool urlsLoaded;
 
     [Inject]
     private UrlShortenerApiClient ApiClient { get; set; } = default!;
 
-    protected override async Task OnInitializedAsync()
+    private DotNetObjectReference<Home>? dotNetReference;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        var items = await ApiClient.GetUrlsAsync();
-        urls.AddRange(items);
+        if (!firstRender)
+        {
+            return;
+        }
+
+        dotNetReference = DotNetObjectReference.Create(this);
+
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("urlTrimmerClerk.registerAuthStateListener", dotNetReference);
+            var authState = await JSRuntime.InvokeAsync<AuthState>("urlTrimmerClerk.getAuthState");
+            await ApplyAuthStateAsync(authState);
+        }
+        catch (JSException)
+        {
+            isSignedIn = false;
+        }
+    }
+
+    [JSInvokable]
+    public Task OnAuthStateChanged(AuthState authState) => ApplyAuthStateAsync(authState);
+
+    private async Task ApplyAuthStateAsync(AuthState authState)
+    {
+        isSignedIn = authState.IsSignedIn;
+
+        if (isSignedIn && !urlsLoaded)
+        {
+            urlsLoaded = true;
+            var items = await ApiClient.GetUrlsAsync();
+            urls.Clear();
+            urls.AddRange(items);
+        }
+
+        await InvokeAsync(StateHasChanged);
     }
 
     private string submitLabel => isSubmitting ? "Creating..." : "Shorten URL";
@@ -101,6 +181,25 @@
         }
     }
 
+    public async ValueTask DisposeAsync()
+    {
+        if (dotNetReference is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("urlTrimmerClerk.unregisterAuthStateListener", dotNetReference);
+        }
+        catch (JSException)
+        {
+        }
+
+        dotNetReference.Dispose();
+        dotNetReference = null;
+    }
+
     private sealed class CreateShortUrlRequestModel
     {
         public string OriginalUrl { get; set; } = string.Empty;
@@ -113,4 +212,6 @@
             CustomCode = null;
         }
     }
+
+    public sealed record AuthState(bool IsSignedIn, string DisplayName);
 }

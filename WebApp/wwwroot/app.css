@@ -88,8 +88,12 @@ a {
     display: grid;
     grid-template-columns: 1.05fr 0.95fr;
     gap: 32px;
-    align-items: start;
+    align-items: center;
     margin-bottom: 12px;
+}
+
+.hero-single {
+    grid-template-columns: 1fr;
 }
 
 .lede {
