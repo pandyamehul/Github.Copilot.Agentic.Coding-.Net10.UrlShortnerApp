@@ -1,0 +1,24 @@
+server: "https://auth.neon.local" # replace with your Neon auth base URL
+
+client:
+  name: "UrlShortner VSCode MCP Client"
+  client_id: "REPLACE_WITH_REGISTERED_CLIENT_ID"
+  auth_method: "pkce" # recommended for local/public clients
+  redirect_uris:
+    - "https://insiders.vscode.dev/redirect"
+    - "https://vscode.dev/redirect"
+    - "http://127.0.0.1:33418/"
+    - "http://127.0.0.1/"
+  scopes:
+    - "openid"
+    - "profile"
+    - "email"
+
+security:
+  require_https_for_production: true
+  allow_loopback_for_local_dev: true
+
+notes: |
+  - Use PKCE (no client secret) for local VS Code flows.
+  - Do NOT expose loopback redirect URIs via a public tunnel (ngrok, gradio share, etc.).
+  - For production use a hosted HTTPS redirect and a confidential client with a secret.
