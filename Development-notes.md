@@ -69,3 +69,4 @@ For agentic coding, the following development notes are provided to assist in un
     These are the ground rules for any AI coding agent (or human) working in this repository.
     This file is intentionally short. Detailed, topic-specific standards live under [docs/](docs/) —
     read the relevant doc(s) before making changes in that area.
+    ```
