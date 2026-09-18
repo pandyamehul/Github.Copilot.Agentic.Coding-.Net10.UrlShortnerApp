@@ -69,8 +69,42 @@ For agentic coding, the following development notes are provided to assist in un
     These are the ground rules for any AI coding agent (or human) working in this repository.
     This file is intentionally short. Detailed, topic-specific standards live under [docs/](docs/) —
     read the relevant doc(s) before making changes in that area.
+
+    Update the agents.md file to make sure that it's incredibly important to ALWAYS read the relevant individual instructions files within the /docs directory BEFORE generating ANY code.
+
+    Update tech stack and architecture details as well
+
     ```
 
 9. Implemented additional security measures for the app, including route protection and Clerk integration checks. Updated documentation to reflect these changes.
 
 10. Reviewed and refactored the app's authentication flow to ensure compliance with the updated security standards and Clerk integration guidelines.
+
+11. Few more additional prompt to improve the application
+
+    ```txt
+
+    implement the homepage which should be a landing page highlighting the features of this app
+
+    App doesn't looks professional
+    
+    when application load it should show the high level features offered by app and option to login - after login user should see the urls
+
+    update the docs and agent instructions
+
+    ```
+
+12. Implement db schema and integration for the application, ensuring proper relationships and constraints are in place.
+
+    ```txt
+    [plan mode]: 
+    
+    Plan a very simple table schema to store shortened links
+
+    Do not need any click tracking and deletes will be permanent i.e. NO soft deletes.
+    Need a createdAt, updatedAt, clerk user id, short code, and url to store.
+    All dates must store the timezone data.
+    Revise plan accordingly
+
+    
+    ```
