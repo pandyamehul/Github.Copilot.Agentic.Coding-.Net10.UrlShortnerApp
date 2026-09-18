@@ -70,3 +70,7 @@ For agentic coding, the following development notes are provided to assist in un
     This file is intentionally short. Detailed, topic-specific standards live under [docs/](docs/) —
     read the relevant doc(s) before making changes in that area.
     ```
+
+9. Implemented additional security measures for the app, including route protection and Clerk integration checks. Updated documentation to reflect these changes.
+
+10. Reviewed and refactored the app's authentication flow to ensure compliance with the updated security standards and Clerk integration guidelines.
