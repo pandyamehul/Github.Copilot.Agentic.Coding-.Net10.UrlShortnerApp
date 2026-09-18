@@ -27,6 +27,6 @@ public sealed class UrlShortenerApiClient(HttpClient httpClient)
     private ShortUrlViewModel Map(ShortUrlResponse response)
     {
         var shortenedUrl = new Uri(httpClient.BaseAddress!, $"u/{response.Code}").ToString();
-        return new ShortUrlViewModel(response.Id, response.Code, response.OriginalUrl, shortenedUrl, response.CreatedUtc, response.ClickCount);
+        return new ShortUrlViewModel(response.Id, response.Code, response.OriginalUrl, shortenedUrl, response.ClerkUserId, response.CreatedAt, response.UpdatedAt);
     }
 }
