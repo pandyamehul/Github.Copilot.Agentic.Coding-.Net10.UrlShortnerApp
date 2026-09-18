@@ -10,9 +10,11 @@ public sealed class ShortUrl
 
     public string OriginalUrl { get; set; } = string.Empty;
 
-    public DateTime CreatedUtc { get; set; }
+    public string ClerkUserId { get; set; } = string.Empty;
 
-    public int ClickCount { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
 
-    public ShortUrlResponse ToResponse() => new(Id, Code, OriginalUrl, CreatedUtc, ClickCount);
+    public DateTimeOffset UpdatedAt { get; set; }
+
+    public ShortUrlResponse ToResponse() => new(Id, Code, OriginalUrl, ClerkUserId, CreatedAt, UpdatedAt);
 }

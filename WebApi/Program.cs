@@ -38,7 +38,7 @@ app.MapGet("/api/health", () => Results.Ok(new { status = "ok" }));
 app.MapGet("/api/urls", async (UrlShortenerDbContext db, CancellationToken cancellationToken) =>
 {
     var items = await db.ShortUrls
-        .OrderByDescending(item => item.CreatedUtc)
+        .OrderByDescending(item => item.CreatedAt)
         .Select(item => item.ToResponse())
         .ToListAsync(cancellationToken);
 
@@ -81,7 +81,9 @@ app.MapPost("/api/urls", async (
     {
         Code = code,
         OriginalUrl = originalUri.ToString(),
-        CreatedUtc = DateTime.UtcNow
+        ClerkUserId = "anonymous",
+        CreatedAt = DateTimeOffset.UtcNow,
+        UpdatedAt = DateTimeOffset.UtcNow
     };
 
     db.ShortUrls.Add(shortUrl);
@@ -108,8 +110,7 @@ app.MapGet("/u/{code}", async (string code, UrlShortenerDbContext db, Cancellati
         return Results.NotFound();
     }
 
-    shortUrl.ClickCount += 1;
-    await db.SaveChangesAsync(cancellationToken);
+    // No click tracking per schema: do not increment counters here.
 
     return Results.Redirect(shortUrl.OriginalUrl);
 });
