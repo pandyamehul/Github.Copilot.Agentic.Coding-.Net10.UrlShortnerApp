@@ -11,8 +11,8 @@
             <p class="eyebrow">Link shortening</p>
             <h2>Trim a long URL and keep the important part.</h2>
             <p class="lede">
-                UrlTrimmer turns long URLs into short, shareable links, tracks how often each one is
-                opened, and keeps every link organized in one place. Sign in to start creating your own.
+                UrlTrimmer turns long URLs into short, shareable links and keeps every link organized
+                in one place. Sign in to start creating your own.
             </p>
         </div>
     </section>
@@ -25,9 +25,9 @@
         </article>
 
         <article class="card">
-            <h3>Track clicks</h3>
-            <p class="muted">Every link records how many times it has been opened, so you always know what's getting
-                traffic.</p>
+            <h3>Custom short codes</h3>
+            <p class="muted">Use an auto-generated code or supply your own memorable custom code when you shorten a
+                link.</p>
             </article>
 
             <article class="card">
@@ -49,7 +49,7 @@ else
                     <p class="eyebrow">Link shortening</p>
                     <h2>Trim a long URL and keep the important part.</h2>
                     <p class="lede">
-                        Create compact links, track clicks, and route everything through the API-backed URL store.
+                        Create compact links and manage your saved URLs, all backed by the API-powered URL store.
                     </p>
                 </div>
 
@@ -117,6 +117,7 @@ else
     private bool isSubmitting;
     private bool isSignedIn;
     private bool urlsLoaded;
+    private string clerkUserId = string.Empty;
 
     [Inject]
     private UrlShortenerApiClient ApiClient { get; set; } = default!;
@@ -150,11 +151,12 @@ else
     private async Task ApplyAuthStateAsync(AuthState authState)
     {
         isSignedIn = authState.IsSignedIn;
+        clerkUserId = authState.UserId;
 
         if (isSignedIn && !urlsLoaded)
         {
             urlsLoaded = true;
-            var items = await ApiClient.GetUrlsAsync();
+            var items = await ApiClient.GetUrlsAsync(clerkUserId);
             urls.Clear();
             urls.AddRange(items);
         }
@@ -170,7 +172,8 @@ else
 
         try
         {
-            var created = await ApiClient.CreateAsync(new CreateShortUrlRequest(request.OriginalUrl, request.CustomCode));
+            var created = await ApiClient.CreateAsync(new CreateShortUrlRequest(request.OriginalUrl, request.CustomCode,
+clerkUserId));
             latestLink = created;
             urls.Insert(0, created);
             request.Reset();
@@ -216,5 +219,5 @@ else
         }
     }
 
-    public sealed record AuthState(bool IsSignedIn, string DisplayName);
+    public sealed record AuthState(bool IsSignedIn, string DisplayName, string UserId);
 }

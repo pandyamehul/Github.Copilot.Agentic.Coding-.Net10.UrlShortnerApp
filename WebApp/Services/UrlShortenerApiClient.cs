@@ -5,9 +5,9 @@ namespace UrlTrimmer.WebApp.Services;
 
 public sealed class UrlShortenerApiClient(HttpClient httpClient)
 {
-    public async Task<IReadOnlyList<ShortUrlViewModel>> GetUrlsAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<ShortUrlViewModel>> GetUrlsAsync(string clerkUserId, CancellationToken cancellationToken = default)
     {
-        var items = await httpClient.GetFromJsonAsync<List<ShortUrlResponse>>("api/urls", cancellationToken)
+        var items = await httpClient.GetFromJsonAsync<List<ShortUrlResponse>>($"api/urls?clerkUserId={Uri.EscapeDataString(clerkUserId)}", cancellationToken)
             ?? [];
 
         return items.Select(Map).ToList();

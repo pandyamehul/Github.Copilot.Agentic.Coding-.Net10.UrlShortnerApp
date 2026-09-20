@@ -108,7 +108,8 @@ window.urlTrimmerClerk = (() => {
     function getAuthState() {
         return {
             isSignedIn: Boolean(clerk?.isSignedIn),
-            displayName: getDisplayName()
+            displayName: getDisplayName(),
+            userId: clerk?.user?.id ?? ""
         };
     }
 

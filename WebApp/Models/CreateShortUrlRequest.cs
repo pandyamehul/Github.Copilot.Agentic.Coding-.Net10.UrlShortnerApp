@@ -1,3 +1,3 @@
 namespace UrlTrimmer.WebApp.Models;
 
-public sealed record CreateShortUrlRequest(string OriginalUrl, string? CustomCode);
+public sealed record CreateShortUrlRequest(string OriginalUrl, string? CustomCode, string ClerkUserId);

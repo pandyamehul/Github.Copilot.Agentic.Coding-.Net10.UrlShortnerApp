@@ -84,9 +84,16 @@ using (var scope = app.Services.CreateScope())
 
 app.MapGet("/api/health", () => Results.Ok(new { status = "ok" }));
 
-app.MapGet("/api/urls", async (UrlShortenerDbContext db, CancellationToken cancellationToken) =>
+app.MapGet("/api/urls", async (string? clerkUserId, UrlShortenerDbContext db, CancellationToken cancellationToken) =>
 {
-    var items = await db.ShortUrls
+    var query = db.ShortUrls.AsQueryable();
+
+    if (!string.IsNullOrWhiteSpace(clerkUserId))
+    {
+        query = query.Where(item => item.ClerkUserId == clerkUserId);
+    }
+
+    var items = await query
         .Select(item => item.ToResponse())
         .ToListAsync(cancellationToken);
 
@@ -105,6 +112,14 @@ app.MapPost("/api/urls", async (
         return Results.ValidationProblem(new Dictionary<string, string[]>
         {
             [nameof(request.OriginalUrl)] = ["A valid absolute http or https URL is required."]
+        });
+    }
+
+    if (string.IsNullOrWhiteSpace(request.ClerkUserId))
+    {
+        return Results.ValidationProblem(new Dictionary<string, string[]>
+        {
+            [nameof(request.ClerkUserId)] = ["A signed-in Clerk user id is required."]
         });
     }
 
@@ -129,7 +144,7 @@ app.MapPost("/api/urls", async (
     {
         Code = code,
         OriginalUrl = originalUri.ToString(),
-        ClerkUserId = "anonymous",
+        ClerkUserId = request.ClerkUserId,
         CreatedAt = DateTimeOffset.UtcNow,
         UpdatedAt = DateTimeOffset.UtcNow
     };
