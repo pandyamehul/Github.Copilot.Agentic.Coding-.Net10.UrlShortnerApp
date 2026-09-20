@@ -6,9 +6,10 @@
 
 ## Protected Routes
 
-- Every page requires an authenticated user.
+- Every page that reads or writes user-specific data requires an authenticated user.
 - Enforce auth checks via routing/middleware, not just client-side UI checks.
 - Unauthenticated access attempts must redirect into the Clerk sign-in flow.
+- **Exception:** `/dashboard` (`Dashboard.razor`) is a public, static feature-overview page. It shows no URL data (no per-user or aggregate stats) and does not call the API, so it does not require sign-in.
 
 ## Homepage Behavior
 
@@ -19,6 +20,12 @@
 ## Sign-In / Sign-Up UX
 
 - Sign-in and sign-up must always launch as **modals** (e.g. Clerk's `routing="virtual"` or modal mode) — never as separate full-page routes.
+
+## Per-User Data Scoping
+
+- The signed-in Clerk user's id (`clerk.user.id`, exposed as `userId` from `urlTrimmerClerk.getAuthState()`) is the only identifier used to scope a user's short URLs.
+- `WebApp` must pass this `ClerkUserId` on every create request (`POST /api/urls`) and every list request (`GET /api/urls?clerkUserId=...`); the API rejects creates with a missing/blank `ClerkUserId`.
+- `WebApi` never invents or defaults a user id (no `"anonymous"` placeholder) — every stored `ShortUrl.ClerkUserId` must be the real signed-in Clerk user id supplied by the caller.
 
 ## Route Protection & Redirects
 
@@ -43,7 +50,8 @@
 - [ ] Clerk provider/middleware is registered once at the app root and wraps all routes.
 - [ ] Every page/route resolves through the shared auth guard (no page bypasses it).
 - [ ] Sign-in and sign-up components are configured with modal routing, not path-based routing.
-- [ ] Homepage (`/`) redirect-to-`/dashboard` logic is verified for logged-in users.
+- [ ] `/dashboard` stays a public, data-free feature page; user-specific data only ever renders on `/` for signed-in users.
+- [ ] Every create/list call to `WebApi` passes the real signed-in Clerk `userId`, never a placeholder.
 - [ ] Sign-out clears Clerk session and redirects to a safe, non-protected landing state.
 - [ ] Environment-specific Clerk instances (dev/prod) are configured correctly per environment.
 
@@ -59,7 +67,7 @@
 
 - **Redirect loop between sign-in and a protected page:** confirm the post-sign-in redirect URL matches an allowed Clerk redirect and isn't itself behind the same guard incorrectly.
 - **Modal doesn't open, page navigates instead:** check the sign-in/sign-up component is configured for modal/virtual routing, not default path routing.
-- **User stays on `/` after login instead of `/dashboard`:** verify the redirect check runs after Clerk session is fully loaded, not before hydration.
+- **Saved links list is empty/wrong after signing in:** verify `clerk.user.id` is populated before the list/create call fires and that it's passed as `clerkUserId` on both `GetUrlsAsync` and `CreateAsync`.
 - **"Flash" of protected content before redirect:** move the auth check earlier (server-side/layout level) instead of relying on a client-only effect.
 - **401/403 calling `WebApi` from `WebApp`:** confirm the Clerk session token is being forwarded correctly via `UrlShortenerApiClient`.
 

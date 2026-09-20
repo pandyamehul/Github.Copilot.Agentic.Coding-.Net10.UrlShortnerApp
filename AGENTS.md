@@ -20,7 +20,7 @@ read the relevant doc(s) before making changes in that area.
 
 For detailed guidance on specific topics, refer to modular documentation under `docs/` directory. It is incredibly important to ALWAYS read the relevant individual instruction file(s) in `docs/` BEFORE generating ANY code or making ANY code changes.
 
-- [docs/authentication-standards.md](docs/authentication-standards.md) — Clerk-only auth, protected routes, auth-aware homepage, modal sign-in/sign-up.
+- [docs/authentication-standards.md](docs/authentication-standards.md) — Clerk-only auth, protected routes (with `/dashboard` public exception), auth-aware homepage, per-user Clerk data scoping, modal sign-in/sign-up.
 - [docs/ui-component-standards.md](docs/ui-component-standards.md) — Custom Blazor markup + hand-written CSS (NeoUI removed), shared CSS classes over ad-hoc styles.
 
 ## Non-Negotiable Rules
