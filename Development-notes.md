@@ -105,6 +105,5 @@ For agentic coding, the following development notes are provided to assist in un
     Need a createdAt, updatedAt, clerk user id, short code, and url to store.
     All dates must store the timezone data.
     Revise plan accordingly
-
     
     ```

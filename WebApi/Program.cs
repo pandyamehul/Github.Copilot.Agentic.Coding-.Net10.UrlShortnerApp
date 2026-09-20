@@ -31,6 +31,55 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<UrlShortenerDbContext>();
     db.Database.EnsureCreated();
+
+    var connection = db.Database.GetDbConnection();
+    connection.Open();
+    using var command = connection.CreateCommand();
+    command.CommandText = "PRAGMA table_info(\"ShortUrls\")";
+    using var reader = command.ExecuteReader();
+    var columns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    while (reader.Read())
+    {
+        columns.Add(reader.GetString(1));
+    }
+
+    reader.Close();
+    if (columns.Any(column => string.Equals(column, "OriginalUrl", StringComparison.Ordinal)))
+    {
+        command.CommandText = """
+            CREATE TABLE "ShortUrls_v2" (
+                "Id" INTEGER NOT NULL CONSTRAINT "PK_ShortUrls" PRIMARY KEY AUTOINCREMENT,
+                "code" TEXT NOT NULL,
+                "original_url" TEXT NOT NULL,
+                "clerk_user_id" TEXT NOT NULL,
+                "created_at" TEXT NOT NULL,
+                "updated_at" TEXT NOT NULL
+            );
+            INSERT INTO "ShortUrls_v2" ("Id", "code", "original_url", "clerk_user_id", "created_at", "updated_at")
+            SELECT "Id", "Code", COALESCE("original_url", "OriginalUrl", ''), COALESCE("clerk_user_id", 'anonymous'),
+                   COALESCE("created_at", '1970-01-01T00:00:00+00:00'), COALESCE("updated_at", '1970-01-01T00:00:00+00:00')
+            FROM "ShortUrls";
+            DROP TABLE "ShortUrls";
+            ALTER TABLE "ShortUrls_v2" RENAME TO "ShortUrls";
+            CREATE UNIQUE INDEX "idx_short_urls_code" ON "ShortUrls" ("code");
+            """;
+        command.ExecuteNonQuery();
+        columns = ["Id", "code", "original_url", "clerk_user_id", "created_at", "updated_at"];
+    }
+
+    var missingColumns = new Dictionary<string, string>
+    {
+        ["original_url"] = "TEXT NOT NULL DEFAULT ''",
+        ["clerk_user_id"] = "TEXT NOT NULL DEFAULT 'anonymous'",
+        ["created_at"] = "TEXT NOT NULL DEFAULT '1970-01-01T00:00:00+00:00'",
+        ["updated_at"] = "TEXT NOT NULL DEFAULT '1970-01-01T00:00:00+00:00'"
+    };
+
+    foreach (var missingColumn in missingColumns.Where(item => !columns.Contains(item.Key)))
+    {
+        command.CommandText = $"ALTER TABLE \"ShortUrls\" ADD COLUMN {missingColumn.Key} {missingColumn.Value}";
+        command.ExecuteNonQuery();
+    }
 }
 
 app.MapGet("/api/health", () => Results.Ok(new { status = "ok" }));
@@ -38,11 +87,10 @@ app.MapGet("/api/health", () => Results.Ok(new { status = "ok" }));
 app.MapGet("/api/urls", async (UrlShortenerDbContext db, CancellationToken cancellationToken) =>
 {
     var items = await db.ShortUrls
-        .OrderByDescending(item => item.CreatedAt)
         .Select(item => item.ToResponse())
         .ToListAsync(cancellationToken);
 
-    return Results.Ok(items);
+    return Results.Ok(items.OrderByDescending(item => item.CreatedAt));
 });
 
 app.MapPost("/api/urls", async (
