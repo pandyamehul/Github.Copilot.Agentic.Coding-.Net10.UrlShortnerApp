@@ -1,4 +1,6 @@
 @page "/dashboard"
+@implements IAsyncDisposable
+@inject IJSRuntime JSRuntime
 
 <PageTitle>Dashboard - UrlTrimmer</PageTitle>
 
@@ -11,6 +13,38 @@
         </p>
     </div>
 </section>
+
+@if (isSignedIn)
+{
+    <section class="card">
+        <h3>Your links</h3>
+        @if (!linksLoaded)
+        {
+            <p class="muted">Loading your links...</p>
+        }
+        else if (loadError is not null)
+        {
+            <p class="error-banner">We couldn't load your links right now. Please try again later.</p>
+        }
+        else if (urls.Count == 0)
+        {
+            <p class="muted">You haven't created any links yet.</p>
+        }
+        else
+        {
+            <ul class="url-list">
+                @foreach (var url in urls)
+                {
+                    <li>
+                        <strong><a href="@url.ShortenedUrl" target="_blank">@url.Code</a></strong>
+                        <span>@url.OriginalUrl</span>
+                        <small>Created @url.CreatedAt</small>
+                    </li>
+                }
+            </ul>
+        }
+    </section>
+}
 
 <section class="results-grid">
     <article class="card">
@@ -36,3 +70,95 @@
             <p class="muted">Sign in with Clerk to create and manage your own links safely.</p>
         </article>
     </section>
+
+@code {
+    private readonly List<ShortUrlViewModel> urls = [];
+    private bool isSignedIn;
+    private bool linksLoaded;
+    private string clerkUserId = string.Empty;
+    private Exception? loadError;
+    private DotNetObjectReference<Dashboard>? dotNetReference;
+
+    [Inject]
+    private UrlShortenerApiClient ApiClient { get; set; } = default!;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        dotNetReference = DotNetObjectReference.Create(this);
+
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("urlTrimmerClerk.registerAuthStateListener", dotNetReference);
+            var authState = await JSRuntime.InvokeAsync<AuthState>("urlTrimmerClerk.getAuthState");
+            await ApplyAuthStateAsync(authState);
+        }
+        catch (JSException)
+        {
+            isSignedIn = false;
+        }
+    }
+
+    [JSInvokable]
+    public Task OnAuthStateChanged(AuthState authState) => ApplyAuthStateAsync(authState);
+
+    private async Task ApplyAuthStateAsync(AuthState authState)
+    {
+        var userChanged = !string.Equals(clerkUserId, authState.UserId, StringComparison.Ordinal);
+        isSignedIn = authState.IsSignedIn;
+        clerkUserId = authState.UserId;
+
+        if (!isSignedIn)
+        {
+            urls.Clear();
+            linksLoaded = false;
+            loadError = null;
+        }
+        else if (userChanged || !linksLoaded)
+        {
+            try
+            {
+                var items = await ApiClient.GetUrlsAsync(clerkUserId);
+                urls.Clear();
+                urls.AddRange(items);
+                loadError = null;
+            }
+            catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException)
+            {
+                loadError = exception;
+            }
+
+            linksLoaded = true;
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (dotNetReference is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("urlTrimmerClerk.unregisterAuthStateListener", dotNetReference);
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+        catch (JSException)
+        {
+        }
+
+        dotNetReference.Dispose();
+        dotNetReference = null;
+    }
+
+    public sealed record AuthState(bool IsSignedIn, string DisplayName, string UserId);
+}
