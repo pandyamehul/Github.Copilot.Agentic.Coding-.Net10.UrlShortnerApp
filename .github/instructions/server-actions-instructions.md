@@ -35,28 +35,28 @@ description: Instructions for implementing server-side data mutations in the Bla
 
 For a create-short-URL mutation, follow this flow:
 
-```razor
+```javascript
 @inject UrlShortenerApiClient ApiClient
 
 <EditForm Model="request" OnValidSubmit="CreateShortUrlAsync">
-	<InputText @bind-Value="request.Url" />
-	<button type="submit">Create</button>
+    <InputText @bind-Value="request.Url" />
+    <button type="submit">Create</button>
 </EditForm>
 
 @code {
-	private readonly CreateShortUrlRequest request = new();
+    private readonly CreateShortUrlRequest request = new();
 
-	private async Task CreateShortUrlAsync()
-	{
-		var result = await ApiClient.CreateAsync(request);
-		if (result.Error is not null)
-		{
-			// Display the safe error and keep the form usable.
-			return;
-		}
+    private async Task CreateShortUrlAsync()
+    {
+        var result = await ApiClient.CreateAsync(request);
+        if (result.Error is not null)
+        {
+            // Display the safe error and keep the form usable.
+            return;
+        }
 
-		// Update component state from result.Success.
-	}
+        // Update component state from result.Success.
+    }
 }
 ```
 
