@@ -1,7 +1,7 @@
 # Agent Instructions — UrlTrimmer
 
 These are the ground rules for any AI coding agent (or human) working in this repository.
-This file is intentionally short. Detailed, topic-specific standards live under [docs/](docs/) —
+This file is intentionally short. Detailed, topic-specific standards live under [instructions/](instructions/) —
 read the relevant doc(s) before making changes in that area.
 
 ## Project Snapshot
@@ -18,10 +18,9 @@ read the relevant doc(s) before making changes in that area.
 
 ## Documentation Map
 
-For detailed guidance on specific topics, refer to modular documentation under `docs/` directory. It is incredibly important to ALWAYS read the relevant individual instruction file(s) in `docs/` BEFORE generating ANY code or making ANY code changes.
-
-- [docs/authentication-standards.md](docs/authentication-standards.md) — Clerk-only auth, protected routes (with `/dashboard` public exception), auth-aware homepage, per-user Clerk data scoping, modal sign-in/sign-up.
-- [docs/ui-component-standards.md](docs/ui-component-standards.md) — Custom Blazor markup + hand-written CSS (NeoUI removed), shared CSS classes over ad-hoc styles.
+- [instructions/data-fetching-instructions.md](instructions/data-fetching-instructions.md) — Guidelines for implementing data fetching in the app, including API client usage and error handling.
+- [instructions/authentication.instructions.md](instructions/authentication.instructions.md) — Clerk-only auth, protected routes (with `/dashboard` public exception), auth-aware homepage, per-user Clerk data scoping, modal sign-in/sign-up.
+- [instructions/ui-component-standards.instructions.md](instructions/ui-component-standards.instructions.md) — Custom Blazor markup + hand-written CSS (NeoUI removed), shared CSS classes over ad-hoc styles.
 
 ## Non-Negotiable Rules
 
@@ -43,8 +42,8 @@ For detailed guidance on specific topics, refer to modular documentation under `
    adopt those parts of the aspirational stack when explicitly asked to migrate, and update the
    relevant doc under `docs/` when you do. **Clerk (auth) is an adopted standard; NeoUI has been
    removed in favor of custom Blazor markup + hand-written CSS** — see
-   [docs/ui-component-standards.md](docs/ui-component-standards.md) and
-   [docs/authentication-standards.md](docs/authentication-standards.md).
+   [instructions/ui-component-standards.md](instructions/ui-component-standards.md) and
+   [instructions/authentication-standards.md](instructions/authentication-standards.md).
 8. **Ask before you assume.** If a request is ambiguous, or if you see a conflict between the
    instructions and the docs, flag it and ask for clarification instead of guessing.
 9. **Git commit messages must be clear and descriptive.** Always prefix commit message with date YYYYMMDD# followed by a short description. Use the imperative mood, e.g. "Fix bug in URL shortening" or "Add unit tests for auth middleware". Avoid vague messages like "Update code" or "Fix stuff".

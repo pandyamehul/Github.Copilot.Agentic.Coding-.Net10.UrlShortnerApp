@@ -1,3 +1,7 @@
+---
+description: Instructions for authentication in the application. Read this before implementing or modifying authentication-related code in the project.
+---
+
 # Authentication Standards
 
 ## Provider
