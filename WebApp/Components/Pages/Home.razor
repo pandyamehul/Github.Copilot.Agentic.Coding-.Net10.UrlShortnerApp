@@ -130,31 +130,34 @@ else
 
                         @if (!showAllUrls && urls.Count > PreviewUrlCount)
                         {
-                            <button type="button" class="view-all-link" @onclick="ShowAllUrls">View all links <span aria-hidden="true">→</span></button>
-                        }
+                            <button type="button" class="view-all-link" @onclick="ShowAllUrls">View all links <span
+                                aria-hidden="true">→</span></button>
+                            }
                         else if (showAllUrls)
-                        {
-                            <div class="pagination-controls">
-                                <label>
-                                    Links per page
-                                    <select value="@pageSize" @onchange="OnPageSizeChanged">
-                                        @foreach (var option in PageSizeOptions)
-                                        {
-                                            <option value="@option">@option</option>
-                                        }
-                                    </select>
-                                </label>
-                                <div class="pagination-actions">
-                                    <button type="button" class="secondary-button" @onclick="PreviousPage" disabled="@(currentPage == 1)">Previous</button>
-                                    <span>Page @currentPage of @TotalPages</span>
-                                    <button type="button" class="secondary-button" @onclick="NextPage" disabled="@(currentPage == TotalPages)">Next</button>
+                            {
+                                <div class="pagination-controls">
+                                    <label>
+                                        Links per page
+                                        <select value="@pageSize" @onchange="OnPageSizeChanged">
+                                            @foreach (var option in PageSizeOptions)
+                                            {
+                                                <option value="@option">@option</option>
+                                            }
+                                        </select>
+                                    </label>
+                                    <div class="pagination-actions">
+                                        <button type="button" class="secondary-button" @onclick="PreviousPage"
+                                                disabled="@(currentPage == 1)">Previous</button>
+                                        <span>Page @currentPage of @TotalPages</span>
+                                        <button type="button" class="secondary-button" @onclick="NextPage"
+                                                disabled="@(currentPage == TotalPages)">Next</button>
+                                    </div>
                                 </div>
-                            </div>
+                            }
                         }
-                    }
-                </article>
-            </section>
-        }
+                    </article>
+                </section>
+            }
 
 @code {
     private readonly CreateShortUrlRequestModel request = new();
