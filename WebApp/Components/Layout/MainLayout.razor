@@ -1,15 +1,18 @@
 @inherits LayoutComponentBase
 
 <div class="shell">
-    <header class="topbar">
-        <div>
-            <p class="eyebrow">UrlTrimmer</p>
-            <h1>Short links with a clean, focused workflow</h1>
-        </div>
-        <NavMenu />
-    </header>
+    <NavMenu />
 
-    <main class="content">
-        @Body
-    </main>
+    <div class="page-shell">
+        <header class="page-header">
+            <div>
+                <p class="eyebrow">UrlTrimmer</p>
+                <h1>Short links with a clean, focused workflow</h1>
+            </div>
+        </header>
+
+        <main class="content">
+            @Body
+        </main>
+    </div>
 </div>

@@ -16,7 +16,18 @@ public sealed class UrlShortenerApiClient(HttpClient httpClient)
     public async Task<ShortUrlViewModel> CreateAsync(CreateShortUrlRequest request, CancellationToken cancellationToken = default)
     {
         var response = await httpClient.PostAsJsonAsync("api/urls", request, cancellationToken);
-        response.EnsureSuccessStatusCode();
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var error = await response.Content.ReadFromJsonAsync<ApiErrorResponse>(cancellationToken: cancellationToken);
+            var detail = error?.Errors?.Values.SelectMany(messages => messages).FirstOrDefault()
+                ?? error?.Detail
+                ?? error?.Message
+                ?? response.ReasonPhrase
+                ?? "The link could not be created.";
+
+            throw new HttpRequestException(detail, null, response.StatusCode);
+        }
 
         var created = await response.Content.ReadFromJsonAsync<ShortUrlResponse>(cancellationToken: cancellationToken)
             ?? throw new InvalidOperationException("The API did not return the created short URL.");
@@ -29,4 +40,9 @@ public sealed class UrlShortenerApiClient(HttpClient httpClient)
         var shortenedUrl = new Uri(httpClient.BaseAddress!, $"u/{response.Code}").ToString();
         return new ShortUrlViewModel(response.Id, response.Code, response.OriginalUrl, shortenedUrl, response.ClerkUserId, response.CreatedAt, response.UpdatedAt);
     }
+
+    private sealed record ApiErrorResponse(
+        string? Detail,
+        string? Message,
+        Dictionary<string, string[]>? Errors);
 }

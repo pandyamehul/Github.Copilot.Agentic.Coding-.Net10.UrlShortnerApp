@@ -1,26 +1,51 @@
 @inject IJSRuntime JSRuntime
 @implements IAsyncDisposable
 
-<nav class="navmenu">
-    <a href="/dashboard" class="navlink">Dashboard</a>
+<aside class="sidebar @(isCollapsed ? "sidebar-collapsed" : string.Empty)">
+    <div class="sidebar-brand" title="UrlTrimmer">
+        <span class="brand-mark">U</span>
+        <span class="sidebar-label">UrlTrimmer</span>
+    </div>
 
-    @if (isSignedIn)
-    {
-        <a href="/" class="navlink">Create</a>
-        <span class="navlink nav-user">@displayName</span>
-        <button type="button" class="navlink navbutton" onclick="window.urlTrimmerClerk.signOut()">Log out</button>
-    }
-    else
-    {
-        <button type="button" class="navlink navbutton" onclick="window.urlTrimmerClerk.openSignIn()">Sign in</button>
-        <button type="button" class="navlink navbutton" onclick="window.urlTrimmerClerk.openSignUp()">Sign up</button>
-    }
-</nav>
+    <button type="button" class="sidebar-toggle"
+            aria-label="@(isCollapsed ? "Expand navigation" : "Collapse navigation")" aria-expanded="@(!isCollapsed)"
+            title="@(isCollapsed ? "Expand navigation" : "Collapse navigation")" @onclick="ToggleSidebar">
+        <span aria-hidden="true">@(isCollapsed ? "→" : "←")</span>
+        <span class="sidebar-label">@(isCollapsed ? "Expand" : "Collapse")</span>
+    </button>
+
+    <nav class="navmenu" aria-label="Main navigation">
+        <a href="/dashboard" class="navlink" title="Dashboard"><span class="nav-icon" aria-hidden="true">⌂</span><span
+            class="sidebar-label">Dashboard</span></a>
+
+            @if (isSignedIn)
+            {
+                <a href="/" class="navlink" title="Links"><span class="nav-icon" aria-hidden="true">↗</span><span
+                    class="sidebar-label">Links</span></a>
+                    <span class="nav-user"><span class="nav-avatar">@displayName[..1].ToUpperInvariant()</span><span
+                        class="sidebar-label">@displayName</span></span>
+                        <button type="button" class="navlink navbutton" title="Log out" onclick="window.urlTrimmerClerk.signOut()"><span
+                            class="nav-icon" aria-hidden="true">↪</span><span class="sidebar-label">Log out</span></button>
+                        }
+        else
+                        {
+                            <button type="button" class="navlink navbutton" title="Sign in"
+                                    onclick="window.urlTrimmerClerk.openSignIn()"><span class="nav-icon" aria-hidden="true">→</span><span
+                                class="sidebar-label">Sign in</span></button>
+                                <button type="button" class="navlink navbutton" title="Sign up"
+                                        onclick="window.urlTrimmerClerk.openSignUp()"><span class="nav-icon" aria-hidden="true">+</span><span
+                                    class="sidebar-label">Sign up</span></button>
+                                }
+                            </nav>
+                        </aside>
 
 @code {
     private DotNetObjectReference<NavMenu>? dotNetReference;
     private bool isSignedIn;
+    private bool isCollapsed = true;
     private string displayName = "User";
+
+    private void ToggleSidebar() => isCollapsed = !isCollapsed;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {

@@ -17,7 +17,13 @@
 @if (isSignedIn)
 {
     <section class="card">
-        <h3>Your links</h3>
+        <div class="section-heading">
+            <div>
+                <p class="eyebrow">Link library</p>
+                <h3>Your links</h3>
+            </div>
+            <button type="button" class="primary-button" @onclick="OpenCreateDialog">Create link</button>
+        </div>
         @if (!linksLoaded)
         {
             <p class="muted">Loading your links...</p>
@@ -33,7 +39,7 @@
         else
         {
             <ul class="url-list">
-                @foreach (var url in urls)
+                @foreach (var url in urls.OrderByDescending(url => url.CreatedAt).Take(5))
                 {
                     <li>
                         <strong><a href="@url.ShortenedUrl" target="_blank">@url.Code</a></strong>
@@ -42,45 +48,134 @@
                     </li>
                 }
             </ul>
+            <a href="/" class="view-all-link">See all links <span aria-hidden="true">→</span></a>
         }
     </section>
 }
 
-<section class="results-grid">
-    <article class="card">
-        <h3>Shorten instantly</h3>
-        <p class="muted">Paste any long URL and get a compact, shareable link in seconds, with an optional custom code.
-        </p>
-    </article>
+@if (isCreateDialogOpen)
+{
+    <div class="dialog-backdrop" @onclick="CloseCreateDialog">
+        <section class="dialog card" role="dialog" aria-modal="true" aria-labelledby="create-link-title"
+                 @onclick:stopPropagation="true">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">New short link</p>
+                    <h3 id="create-link-title">Create a link</h3>
+                </div>
+                <button type="button" class="icon-button" aria-label="Close dialog"
+                        @onclick="CloseCreateDialog">&times;</button>
+            </div>
 
-    <article class="card">
-        <h3>Custom short codes</h3>
-        <p class="muted">Use an auto-generated code or supply your own memorable custom code when you shorten a link.
-        </p>
-    </article>
+            <EditForm Model="createRequest" OnValidSubmit="CreateShortUrlAsync" class="form-card">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
 
-    <article class="card">
-        <h3>Stay organized</h3>
-        <p class="muted">All your saved links live in one place, ready to revisit, share again, or hand off to
-            teammates.</p>
+                <label>
+                    Original URL
+                    <InputText @bind-Value="createRequest.OriginalUrl" placeholder="https://example.com/your-long-link" />
+                </label>
+
+                <label>
+                    Custom code <span class="muted">(optional)</span>
+                    <InputText @bind-Value="createRequest.CustomCode" placeholder="your-custom-code" />
+                </label>
+
+                @if (createError is not null)
+                {
+                    <p class="error-banner">@createError</p>
+                }
+
+                <div class="dialog-actions">
+                    <button type="button" class="secondary-button" @onclick="CloseCreateDialog"
+                            disabled="@isCreating">Cancel</button>
+                    <button type="submit" class="primary-button" disabled="@isCreating">@(isCreating ? "Creating..." :
+                                                                   "Create link")</button>
+                    </div>
+                </EditForm>
+            </section>
+        </div>
+    }
+
+    <section class="results-grid">
+        <article class="card">
+            <h3>Shorten instantly</h3>
+            <p class="muted">Paste any long URL and get a compact, shareable link in seconds, with an optional custom code.
+            </p>
         </article>
 
         <article class="card">
-            <h3>Secure sign-in</h3>
-            <p class="muted">Sign in with Clerk to create and manage your own links safely.</p>
+            <h3>Custom short codes</h3>
+            <p class="muted">Use an auto-generated code or supply your own memorable custom code when you shorten a link.
+            </p>
         </article>
-    </section>
+
+        <article class="card">
+            <h3>Stay organized</h3>
+            <p class="muted">All your saved links live in one place, ready to revisit, share again, or hand off to
+                teammates.</p>
+            </article>
+
+            <article class="card">
+                <h3>Secure sign-in</h3>
+                <p class="muted">Sign in with Clerk to create and manage your own links safely.</p>
+            </article>
+        </section>
 
 @code {
     private readonly List<ShortUrlViewModel> urls = [];
+    private readonly CreateShortUrlRequestModel createRequest = new();
     private bool isSignedIn;
     private bool linksLoaded;
+    private bool isCreateDialogOpen;
+    private bool isCreating;
     private string clerkUserId = string.Empty;
     private Exception? loadError;
+    private string? createError;
     private DotNetObjectReference<Dashboard>? dotNetReference;
 
     [Inject]
     private UrlShortenerApiClient ApiClient { get; set; } = default!;
+
+    private void OpenCreateDialog()
+    {
+        createError = null;
+        isCreateDialogOpen = true;
+    }
+
+    private void CloseCreateDialog()
+    {
+        if (!isCreating)
+        {
+            isCreateDialogOpen = false;
+        }
+    }
+
+    private async Task CreateShortUrlAsync()
+    {
+        isCreating = true;
+        createError = null;
+
+        try
+        {
+            var created = await ApiClient.CreateAsync(new CreateShortUrlRequest(
+                createRequest.OriginalUrl,
+                createRequest.CustomCode,
+                clerkUserId));
+
+            urls.Insert(0, created);
+            createRequest.Reset();
+            isCreateDialogOpen = false;
+        }
+        catch (HttpRequestException exception)
+        {
+            createError = exception.Message;
+        }
+        finally
+        {
+            isCreating = false;
+        }
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -93,6 +188,7 @@
 
         try
         {
+            await JSRuntime.InvokeVoidAsync("urlTrimmerClerk.registerEscapeListener", dotNetReference);
             await JSRuntime.InvokeVoidAsync("urlTrimmerClerk.registerAuthStateListener", dotNetReference);
             var authState = await JSRuntime.InvokeAsync<AuthState>("urlTrimmerClerk.getAuthState");
             await ApplyAuthStateAsync(authState);
@@ -105,6 +201,18 @@
 
     [JSInvokable]
     public Task OnAuthStateChanged(AuthState authState) => ApplyAuthStateAsync(authState);
+
+    [JSInvokable]
+    public Task OnEscapePressed()
+    {
+        if (isCreateDialogOpen && !isCreating)
+        {
+            isCreateDialogOpen = false;
+            return InvokeAsync(StateHasChanged);
+        }
+
+        return Task.CompletedTask;
+    }
 
     private async Task ApplyAuthStateAsync(AuthState authState)
     {
@@ -147,6 +255,7 @@
 
         try
         {
+            await JSRuntime.InvokeVoidAsync("urlTrimmerClerk.unregisterEscapeListener");
             await JSRuntime.InvokeVoidAsync("urlTrimmerClerk.unregisterAuthStateListener", dotNetReference);
         }
         catch (JSDisconnectedException)
@@ -161,4 +270,16 @@
     }
 
     public sealed record AuthState(bool IsSignedIn, string DisplayName, string UserId);
+
+    private sealed class CreateShortUrlRequestModel
+    {
+        public string OriginalUrl { get; set; } = string.Empty;
+        public string? CustomCode { get; set; }
+
+        public void Reset()
+        {
+            OriginalUrl = string.Empty;
+            CustomCode = null;
+        }
+    }
 }
