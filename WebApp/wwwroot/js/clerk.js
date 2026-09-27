@@ -184,5 +184,9 @@ window.urlTrimmerClerk = (() => {
 const clerkPublishableKey = document.currentScript?.dataset?.clerkPublishableKey;
 
 if (clerkPublishableKey) {
-    window.urlTrimmerClerk.initialize(clerkPublishableKey).catch(error => console.error(error));
+    try {
+        await window.urlTrimmerClerk.initialize(clerkPublishableKey);
+    } catch (error) {
+        console.error(error);
+    }
 }

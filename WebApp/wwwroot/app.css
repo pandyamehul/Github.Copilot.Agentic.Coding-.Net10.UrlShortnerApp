@@ -468,9 +468,9 @@ a {
     margin: 0;
     padding: 12px 14px;
     border-radius: 14px;
-    background: rgba(220, 38, 38, 0.08);
-    color: #991b1b;
-    border: 1px solid rgba(220, 38, 38, 0.15);
+    background: #fef2f2;
+    color: #7f1d1d;
+    border: 1px solid #fecaca;
 }
 
 .results-grid {
@@ -486,7 +486,7 @@ a {
 .result-block {
     display: grid;
     gap: 8px;
-    word-break: break-word;
+    overflow-wrap: anywhere;
 }
 
 .url-list {
