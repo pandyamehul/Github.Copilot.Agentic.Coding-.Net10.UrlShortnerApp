@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 using UrlTrimmer.WebApi.Contracts;
 using UrlTrimmer.WebApi.Data;
 using UrlTrimmer.WebApi.Models;
@@ -16,6 +18,28 @@ builder.Services.AddCors(options =>
     });
 });
 
+var clerkAuthority = builder.Configuration["Clerk:Authority"];
+if (string.IsNullOrWhiteSpace(clerkAuthority))
+{
+    throw new InvalidOperationException("Clerk:Authority must be configured for server-side token validation.");
+}
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.Authority = clerkAuthority;
+        options.Audience = builder.Configuration["Clerk:Audience"];
+        options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = !string.IsNullOrWhiteSpace(options.Audience),
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            NameClaimType = "sub"
+        };
+    });
+
 builder.Services.AddDbContext<UrlShortenerDbContext>(options =>
 {
     options.UseSqlite(builder.Configuration.GetConnectionString("UrlShortenerDb"));
@@ -26,6 +50,8 @@ builder.Services.AddScoped<UrlCodeGenerator>();
 var app = builder.Build();
 
 app.UseCors("WebApp");
+app.UseAuthentication();
+app.UseAuthorization();
 
 using (var scope = app.Services.CreateScope())
 {
@@ -84,24 +110,25 @@ using (var scope = app.Services.CreateScope())
 
 app.MapGet("/api/health", () => Results.Ok(new { status = "ok" }));
 
-app.MapGet("/api/urls", async (string? clerkUserId, UrlShortenerDbContext db, CancellationToken cancellationToken) =>
+app.MapGet("/api/urls", async (HttpContext httpContext, UrlShortenerDbContext db, CancellationToken cancellationToken) =>
 {
-    var query = db.ShortUrls.AsQueryable();
-
-    if (!string.IsNullOrWhiteSpace(clerkUserId))
+    var clerkUserId = httpContext.User.FindFirst("sub")?.Value;
+    if (string.IsNullOrWhiteSpace(clerkUserId))
     {
-        query = query.Where(item => item.ClerkUserId == clerkUserId);
+        return Results.Unauthorized();
     }
 
-    var items = await query
+    var items = await db.ShortUrls
+        .Where(item => item.ClerkUserId == clerkUserId)
         .Select(item => item.ToResponse())
         .ToListAsync(cancellationToken);
 
     return Results.Ok(items.OrderByDescending(item => item.CreatedAt));
-});
+}).RequireAuthorization();
 
 app.MapPost("/api/urls", async (
     CreateShortUrlRequest request,
+    HttpContext httpContext,
     UrlShortenerDbContext db,
     UrlCodeGenerator codeGenerator,
     CancellationToken cancellationToken) =>
@@ -115,12 +142,10 @@ app.MapPost("/api/urls", async (
         });
     }
 
-    if (string.IsNullOrWhiteSpace(request.ClerkUserId))
+    var clerkUserId = httpContext.User.FindFirst("sub")?.Value;
+    if (string.IsNullOrWhiteSpace(clerkUserId))
     {
-        return Results.ValidationProblem(new Dictionary<string, string[]>
-        {
-            [nameof(request.ClerkUserId)] = ["A signed-in Clerk user id is required."]
-        });
+        return Results.Unauthorized();
     }
 
     var code = string.IsNullOrWhiteSpace(request.CustomCode)
@@ -144,7 +169,7 @@ app.MapPost("/api/urls", async (
     {
         Code = code,
         OriginalUrl = originalUri.ToString(),
-        ClerkUserId = request.ClerkUserId,
+        ClerkUserId = clerkUserId,
         CreatedAt = DateTimeOffset.UtcNow,
         UpdatedAt = DateTimeOffset.UtcNow
     };
@@ -153,16 +178,24 @@ app.MapPost("/api/urls", async (
     await db.SaveChangesAsync(cancellationToken);
 
     return Results.Created($"/api/urls/{code}", shortUrl.ToResponse());
-});
+}).RequireAuthorization();
 
-app.MapGet("/api/urls/{code}", async (string code, UrlShortenerDbContext db, CancellationToken cancellationToken) =>
+app.MapGet("/api/urls/{code}", async (string code, HttpContext httpContext, UrlShortenerDbContext db, CancellationToken cancellationToken) =>
 {
-    var shortUrl = await db.ShortUrls.FirstOrDefaultAsync(item => item.Code == code, cancellationToken);
+    var clerkUserId = httpContext.User.FindFirst("sub")?.Value;
+    if (string.IsNullOrWhiteSpace(clerkUserId))
+    {
+        return Results.Unauthorized();
+    }
+
+    var shortUrl = await db.ShortUrls.FirstOrDefaultAsync(
+        item => item.Code == code && item.ClerkUserId == clerkUserId,
+        cancellationToken);
 
     return shortUrl is null
         ? Results.NotFound()
         : Results.Ok(shortUrl.ToResponse());
-});
+}).RequireAuthorization();
 
 app.MapGet("/u/{code}", async (string code, UrlShortenerDbContext db, CancellationToken cancellationToken) =>
 {
