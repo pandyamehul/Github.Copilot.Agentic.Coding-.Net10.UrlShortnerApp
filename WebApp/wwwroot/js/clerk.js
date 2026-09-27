@@ -106,7 +106,9 @@ window.urlTrimmerClerk = (() => {
         return user.username ?? user.primaryEmailAddress?.emailAddress ?? "";
     }
 
-    function getAuthState() {
+    async function getAuthState() {
+        await ensureClerk();
+
         return {
             isSignedIn: Boolean(clerk?.isSignedIn),
             displayName: getDisplayName(),
@@ -133,6 +135,10 @@ window.urlTrimmerClerk = (() => {
         initialize,
         isSignedIn: () => Boolean(clerk?.isSignedIn),
         getAuthState,
+        getToken: async () => {
+            const currentClerk = await ensureClerk();
+            return currentClerk.session ? await currentClerk.session.getToken() : null;
+        },
         registerAuthStateListener: listener => {
             if (listener) {
                 authStateListeners.add(listener);

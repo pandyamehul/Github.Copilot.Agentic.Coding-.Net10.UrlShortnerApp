@@ -5,17 +5,28 @@ namespace UrlTrimmer.WebApp.Services;
 
 public sealed class UrlShortenerApiClient(HttpClient httpClient)
 {
-    public async Task<IReadOnlyList<ShortUrlViewModel>> GetUrlsAsync(string clerkUserId, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<ShortUrlViewModel>> GetUrlsAsync(string clerkUserId, string sessionToken, CancellationToken cancellationToken = default)
     {
-        var items = await httpClient.GetFromJsonAsync<List<ShortUrlResponse>>($"api/urls?clerkUserId={Uri.EscapeDataString(clerkUserId)}", cancellationToken)
+        using var request = new HttpRequestMessage(HttpMethod.Get, "api/urls");
+        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", sessionToken);
+        request.Headers.Add("X-Clerk-Session-Token", sessionToken);
+        using var response = await httpClient.SendAsync(request, cancellationToken);
+        response.EnsureSuccessStatusCode();
+        var items = await response.Content.ReadFromJsonAsync<List<ShortUrlResponse>>(cancellationToken: cancellationToken)
             ?? [];
 
         return items.Select(Map).ToList();
     }
 
-    public async Task<ShortUrlViewModel> CreateAsync(CreateShortUrlRequest request, CancellationToken cancellationToken = default)
+    public async Task<ShortUrlViewModel> CreateAsync(CreateShortUrlRequest request, string sessionToken, CancellationToken cancellationToken = default)
     {
-        var response = await httpClient.PostAsJsonAsync("api/urls", request, cancellationToken);
+        using var httpRequest = new HttpRequestMessage(HttpMethod.Post, "api/urls")
+        {
+            Content = JsonContent.Create(request)
+        };
+        httpRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", sessionToken);
+        httpRequest.Headers.Add("X-Clerk-Session-Token", sessionToken);
+        using var response = await httpClient.SendAsync(httpRequest, cancellationToken);
 
         if (!response.IsSuccessStatusCode)
         {

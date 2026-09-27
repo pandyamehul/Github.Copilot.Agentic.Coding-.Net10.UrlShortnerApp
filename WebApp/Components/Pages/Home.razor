@@ -110,54 +110,63 @@ else
                         </div>
                         <span class="count-badge">@urls.Count</span>
                     </div>
-                    @if (urls.Count == 0)
+                    @if (loadError is not null)
                     {
-                        <div class="empty-state empty-state-compact">
-                            <p>Create a link to see it here.</p>
-                        </div>
-                    }
-                    else
-                    {
-                        <ul class="url-list">
-                            @foreach (var url in DisplayedUrls)
+                        <p class="error-banner">@(loadError is HttpRequestException
                             {
-                                <li>
-                                    <strong><a href="@url.ShortenedUrl" target="_blank">@url.Code</a></strong>
-                                    <span>@url.OriginalUrl</span>
-                                </li>
+                                StatusCode: System.Net.HttpStatusCode.Unauthorized
                             }
-                        </ul>
-
-                        @if (!showAllUrls && urls.Count > PreviewUrlCount)
-                        {
-                            <button type="button" class="view-all-link" @onclick="ShowAllUrls">View all links <span
-                                aria-hidden="true">→</span></button>
-                            }
-                        else if (showAllUrls)
-                            {
-                                <div class="pagination-controls">
-                                    <label>
-                                        Links per page
-                                        <select value="@pageSize" @onchange="OnPageSizeChanged">
-                                            @foreach (var option in PageSizeOptions)
-                                            {
-                                                <option value="@option">@option</option>
-                                            }
-                                        </select>
-                                    </label>
-                                    <div class="pagination-actions">
-                                        <button type="button" class="secondary-button" @onclick="PreviousPage"
-                                                disabled="@(currentPage == 1)">Previous</button>
-                                        <span>Page @currentPage of @TotalPages</span>
-                                        <button type="button" class="secondary-button" @onclick="NextPage"
-                                                disabled="@(currentPage == TotalPages)">Next</button>
-                                    </div>
-                                </div>
-                            }
+                                                        ? "Your session has expired. Please sign in again."
+                                                        : "We couldn't load your links right now. Please try again later.")</p>
                         }
-                    </article>
-                </section>
-            }
+                    else if (urls.Count == 0)
+                        {
+                            <div class="empty-state empty-state-compact">
+                                <p>Create a link to see it here.</p>
+                            </div>
+                        }
+                        else
+                        {
+                            <ul class="url-list">
+                                @foreach (var url in DisplayedUrls)
+                                {
+                                    <li>
+                                        <strong><a href="@url.ShortenedUrl" target="_blank">@url.Code</a></strong>
+                                        <span>@url.OriginalUrl</span>
+                                    </li>
+                                }
+                            </ul>
+
+                            @if (!showAllUrls && urls.Count > PreviewUrlCount)
+                            {
+                                <button type="button" class="view-all-link" @onclick="ShowAllUrls">View all links <span
+                                    aria-hidden="true">→</span></button>
+                                }
+                        else if (showAllUrls)
+                                {
+                                    <div class="pagination-controls">
+                                        <label>
+                                            Links per page
+                                            <select value="@pageSize" @onchange="OnPageSizeChanged">
+                                                @foreach (var option in PageSizeOptions)
+                                                {
+                                                    <option value="@option">@option</option>
+                                                }
+                                            </select>
+                                        </label>
+                                        <div class="pagination-actions">
+                                            <button type="button" class="secondary-button" @onclick="PreviousPage"
+                                                    disabled="@(currentPage == 1)">Previous</button>
+                                            <span>Page @currentPage of @TotalPages</span>
+                                            <button type="button" class="secondary-button" @onclick="NextPage"
+                                                    disabled="@(currentPage == TotalPages)">Next</button>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                        </article>
+                    </section>
+                }
 
 @code {
     private readonly CreateShortUrlRequestModel request = new();
@@ -171,6 +180,7 @@ else
     private int pageSize = 10;
     private string clerkUserId = string.Empty;
     private string? createError;
+    private Exception? loadError;
 
     private const int PreviewUrlCount = 5;
     private static readonly int[] PageSizeOptions = [10, 25, 50, 100];
@@ -218,10 +228,24 @@ else
         if (isSignedIn && !urlsLoaded)
         {
             urlsLoaded = true;
-            var items = await ApiClient.GetUrlsAsync(clerkUserId);
-            urls.Clear();
-            urls.AddRange(items);
-            currentPage = 1;
+            var sessionToken = await JSRuntime.InvokeAsync<string?>("urlTrimmerClerk.getToken");
+            if (string.IsNullOrWhiteSpace(sessionToken))
+            {
+                return;
+            }
+
+            try
+            {
+                var items = await ApiClient.GetUrlsAsync(clerkUserId, sessionToken);
+                urls.Clear();
+                urls.AddRange(items);
+                loadError = null;
+                currentPage = 1;
+            }
+            catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException)
+            {
+                loadError = exception;
+            }
         }
 
         await InvokeAsync(StateHasChanged);
@@ -236,8 +260,15 @@ else
 
         try
         {
+            var sessionToken = await JSRuntime.InvokeAsync<string?>("urlTrimmerClerk.getToken");
+            if (string.IsNullOrWhiteSpace(sessionToken))
+            {
+                createError = "Your Clerk session is not available. Please sign in again.";
+                return;
+            }
+
             var created = await ApiClient.CreateAsync(new CreateShortUrlRequest(request.OriginalUrl, request.CustomCode,
-clerkUserId));
+clerkUserId), sessionToken);
             latestLink = created;
             urls.Insert(0, created);
             currentPage = 1;

@@ -4,6 +4,7 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <RootNamespace>UrlTrimmer.WebApi</RootNamespace>
+        <UserSecretsId>UrlTrimmer.WebApi</UserSecretsId>
     </PropertyGroup>
 
     <ItemGroup>

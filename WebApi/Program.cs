@@ -29,7 +29,42 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     {
         options.Authority = clerkAuthority;
         options.Audience = builder.Configuration["Clerk:Audience"];
+        options.MapInboundClaims = false;
         options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                if (string.IsNullOrWhiteSpace(context.Token))
+                {
+                    context.Token = context.Request.Headers["X-Clerk-Session-Token"].FirstOrDefault();
+                }
+
+                var logger = context.HttpContext.RequestServices
+                    .GetRequiredService<ILoggerFactory>()
+                    .CreateLogger("ClerkAuthentication");
+                logger.LogInformation("Bearer token received: {HasToken}.", !string.IsNullOrWhiteSpace(context.Token));
+                return Task.CompletedTask;
+            },
+            OnAuthenticationFailed = context =>
+            {
+                var logger = context.HttpContext.RequestServices
+                    .GetRequiredService<ILoggerFactory>()
+                    .CreateLogger("ClerkAuthentication");
+                logger.LogWarning(context.Exception, "Clerk token validation failed.");
+                return Task.CompletedTask;
+            },
+            OnTokenValidated = context =>
+            {
+                var logger = context.HttpContext.RequestServices
+                    .GetRequiredService<ILoggerFactory>()
+                    .CreateLogger("ClerkAuthentication");
+                logger.LogInformation("Clerk token validated. Authenticated: {Authenticated}; Subject: {Subject}.",
+                    context.Principal?.Identity?.IsAuthenticated,
+                    context.Principal?.FindFirst("sub")?.Value);
+                return Task.CompletedTask;
+            }
+        };
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
@@ -39,6 +74,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             NameClaimType = "sub"
         };
     });
+
+builder.Services.AddAuthorization();
 
 builder.Services.AddDbContext<UrlShortenerDbContext>(options =>
 {
@@ -50,6 +87,17 @@ builder.Services.AddScoped<UrlCodeGenerator>();
 var app = builder.Build();
 
 app.UseCors("WebApp");
+app.Use(async (context, next) =>
+{
+    if (!context.Request.Headers.ContainsKey("Authorization") &&
+        context.Request.Headers.TryGetValue("X-Clerk-Session-Token", out var sessionToken) &&
+        !string.IsNullOrWhiteSpace(sessionToken))
+    {
+        context.Request.Headers.Authorization = $"Bearer {sessionToken}";
+    }
+
+    await next();
+});
 app.UseAuthentication();
 app.UseAuthorization();
 
