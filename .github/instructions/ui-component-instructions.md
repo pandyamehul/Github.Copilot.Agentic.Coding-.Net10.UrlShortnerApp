@@ -1,3 +1,6 @@
+---
+description: Instructions for UI component usage in the application. Read this before implementing or modifying UI components in the project.
+---
 # UI Component Standards
 
 ## Provider

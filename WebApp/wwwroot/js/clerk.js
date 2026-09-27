@@ -2,6 +2,7 @@ window.urlTrimmerClerk = (() => {
     let clerk = null;
     let initializePromise = null;
     const authStateListeners = new Set();
+    let escapeListener = null;
 
     function loadScript(src, attributes = {}) {
         return new Promise((resolve, reject) => {
@@ -105,7 +106,9 @@ window.urlTrimmerClerk = (() => {
         return user.username ?? user.primaryEmailAddress?.emailAddress ?? "";
     }
 
-    function getAuthState() {
+    async function getAuthState() {
+        await ensureClerk();
+
         return {
             isSignedIn: Boolean(clerk?.isSignedIn),
             displayName: getDisplayName(),
@@ -132,6 +135,10 @@ window.urlTrimmerClerk = (() => {
         initialize,
         isSignedIn: () => Boolean(clerk?.isSignedIn),
         getAuthState,
+        getToken: async () => {
+            const currentClerk = await ensureClerk();
+            return currentClerk.session ? await currentClerk.session.getToken() : null;
+        },
         registerAuthStateListener: listener => {
             if (listener) {
                 authStateListeners.add(listener);
@@ -140,6 +147,20 @@ window.urlTrimmerClerk = (() => {
         unregisterAuthStateListener: listener => {
             if (listener) {
                 authStateListeners.delete(listener);
+            }
+        },
+        registerEscapeListener: listener => {
+            escapeListener = event => {
+                if (event.key === "Escape") {
+                    void listener.invokeMethodAsync("OnEscapePressed");
+                }
+            };
+            document.addEventListener("keydown", escapeListener);
+        },
+        unregisterEscapeListener: () => {
+            if (escapeListener) {
+                document.removeEventListener("keydown", escapeListener);
+                escapeListener = null;
             }
         },
         openSignIn: async () => {

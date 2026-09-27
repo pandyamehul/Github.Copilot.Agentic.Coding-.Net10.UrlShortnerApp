@@ -107,3 +107,23 @@ For agentic coding, the following development notes are provided to assist in un
     Revise plan accordingly
     
     ```
+
+13. Created new branch "Github-copilot/agentic-development" for implementing Agent as per Github Copilot requirements.
+
+    - created new folder"instructions" and added data-fetching instructions for the agent.
+    - moved old agent instructions to the new "instructions" folder and deleted old docs folder.
+    - Updated Agent.md file references to point to the new "instructions" folder instead of the old "docs" folder.
+
+14. In prompts folder - new prompts create-copilot-instructions created for server actions instructions.
+
+15. New server instructions added for handling data mutations through server actions.
+
+    ```txt
+    /create-copilot.instructions ALL data mutations in this app should be done via server actions. Server actions must be called from client components. Server action files MUST be named actions.ts and be colocated in the directory of the component that calls the server action. ALL data passed to server actions must have appropriate script types (DO NOT use the FormData script type for razor pages). ALL data MUST be validated in server actions. ALL server actions MUST first check for a logged in user before continuing with database operations. Database operations must be done via helper functions that wrap queries. These helper functions are located in the /data directory and server actions should NOT directly use queries within them.
+
+    App do not use type script as app frontend is PWA razor - update server instruction to align to architecture
+
+    Add example, validation, database operations and summary checklist
+
+    
+    ```
