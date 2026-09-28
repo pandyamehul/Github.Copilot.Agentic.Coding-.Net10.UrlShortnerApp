@@ -184,9 +184,11 @@ window.urlTrimmerClerk = (() => {
 const clerkPublishableKey = document.currentScript?.dataset?.clerkPublishableKey;
 
 if (clerkPublishableKey) {
-    try {
-        await window.urlTrimmerClerk.initialize(clerkPublishableKey);
-    } catch (error) {
-        console.error(error);
-    }
+    (async () => {
+        try {
+            await window.urlTrimmerClerk.initialize(clerkPublishableKey);
+        } catch (error) {
+            console.error(error);
+        }
+    })();
 }
