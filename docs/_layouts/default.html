@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en-US">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ page.title }} | UrlTrimmer Documentation</title>
+    <meta name="description" content="{{ page.description | default: 'UrlTrimmer project documentation.' }}">
+    <link rel="stylesheet" href="{{ '/assets/css/docs.css' | relative_url }}">
+</head>
+
+<body>
+    <div class="docs-shell">
+        <aside class="docs-sidebar" aria-label="Documentation navigation">
+            <h2>UrlTrimmer</h2>
+            <p>Project documentation</p>
+            <nav class="docs-nav">
+                <a href="{{ '/' | relative_url }}" {% if page.url=='/' %} aria-current="page" {% endif %}>Home</a>
+                <a href="{{ '/project-overview.html' | relative_url }}" {% if page.url contains 'project-overview' %}
+                    aria-current="page" {% endif %}>Project overview</a>
+                <a href="{{ '/repository-overview.html' | relative_url }}" {% if page.url contains 'repository-overview'
+                    %} aria-current="page" {% endif %}>Repository overview</a>
+                <a href="{{ '/architecture.html' | relative_url }}" {% if page.url contains 'architecture' %}
+                    aria-current="page" {% endif %}>Architecture and technical overview</a>
+                <a href="{{ '/api.html' | relative_url }}" {% if page.url contains 'api' %} aria-current="page" {% endif
+                    %}>API documentation</a>
+                <a href="{{ '/operations.html' | relative_url }}" {% if page.url contains 'operations' %}
+                    aria-current="page" {% endif %}>Setup and operations</a>
+            </nav>
+        </aside>
+
+        <main class="docs-content">
+            {{ content }}
+        </main>
+    </div>
+</body>
+
+</html>

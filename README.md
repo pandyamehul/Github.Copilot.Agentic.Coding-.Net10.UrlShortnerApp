@@ -2,6 +2,51 @@
 
 UrlTrimmer is a small URL-shortening application built with ASP.NET Core and Blazor. Authenticated users can create short links, optionally choose a custom short code, and view the links they own. Public short-link requests redirect to the original URL.
 
+> Read the [UrlTrimmer project documentation](docs/index.md), or publish it as a website with GitHub Pages using the steps below.
+
+## Documentation
+
+The full project documentation is split into focused guides:
+
+- [Project overview](docs/project-overview.md): functionality, user flow, and scope.
+- [Repository overview](docs/repository-overview.md): folder structure and project responsibilities.
+- [Architecture and technical overview](docs/architecture.md): components, data model, and technology stack.
+- [API documentation](docs/api.md): routes, requests, authentication, validation, and responses.
+- [Setup and operations](docs/operations.md): prerequisites, configuration, local execution, and publishing.
+
+## Publish this documentation with GitHub Pages
+
+The public documentation is in `docs/index.md`, which GitHub Pages can publish directly without a separate documentation build.
+
+1. Push the repository to GitHub.
+2. Open the repository on GitHub and select **Settings**.
+3. Select **Pages** under **Code and automation**.
+4. Under **Build and deployment**, choose **Deploy from a branch**.
+5. Select your default branch, choose the `/docs` folder, and select **Save**.
+6. Wait for the Pages deployment to finish. GitHub will display the website URL, usually `https://YOUR-USER.github.io/YOUR-REPOSITORY/`.
+
+When `docs/index.md` changes, commit and push the change. GitHub Pages will publish the updated documentation automatically.
+
+### Use a custom documentation URL
+
+To use a hostname such as `docs.example.com`:
+
+1. Add a DNS `CNAME` record for `docs` pointing to `YOUR-USER.github.io`.
+2. Open the repository's **Settings > Pages** page and confirm the default branch and `/docs` folder are selected.
+3. Enter `docs.example.com` under **Custom domain** and select **Save**.
+4. Wait for DNS verification and the TLS certificate, then enable **Enforce HTTPS**.
+
+For an apex domain such as `example.com`, configure GitHub Pages' four `A` records instead:
+
+```text
+185.199.108.153
+185.199.109.153
+185.199.110.153
+185.199.111.153
+```
+
+GitHub may create a `docs/CNAME` file containing the custom hostname. Keep that file committed so the custom domain remains associated with the Pages site.
+
 ## 📁 Project Structure
 
 ```text
@@ -9,7 +54,7 @@ UrlShortner.sln
 ├── WebApi/    ASP.NET Core minimal API, authentication, persistence, and URL rules
 ├── WebApp/    Blazor Web App UI and typed HTTP client
 ├── data/      Reference SQL schema and sample data
-└── instructions/  Repository-specific development guidance
+└── docs/      GitHub Pages project documentation
 ```
 
 ## 🏗️ Architecture
@@ -159,4 +204,4 @@ Open `http://localhost:5044`. The API health endpoint is available at `http://lo
 - Keep secrets out of source control and `appsettings.json`.
 - Run a solution build after changes to ensure both projects remain healthy.
 
-See [AGENTS.md](AGENTS.md) and the documents under [instructions/](instructions/) for repository-specific coding standards.
+See [AGENTS.md](AGENTS.md) for repository-specific coding standards and the [documentation home](docs/index.md) for the public project guides.
